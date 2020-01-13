@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/dao"
 	"github.com/wallacebenevides/star-wars-api/resources"
 )
@@ -15,17 +15,26 @@ const (
 	database = "star_wars_db"
 )
 
-var planetDao = dao.PlanetsDAO{}
+const (
+	port = ":8080"
+)
 
 func init() {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+
+	var planetDao = dao.PlanetsDAO{}
 	planetDao.Hosts = hosts
 	planetDao.Database = database
 	planetDao.Connect()
+
 }
 
 func main() {
+
 	r := mux.NewRouter()
-	log.Println("star wars planets api")
+	log.Info("star wars planets api is listening on port ", port)
 	api := r.PathPrefix("/api").Subrouter()
 	api.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "api v1")
@@ -36,8 +45,6 @@ func main() {
 	api.HandleFunc("/planets", resources.DeletePlanet).Methods(http.MethodDelete)
 	api.HandleFunc("/planets/findByName", resources.FindPlanetByName).Methods(http.MethodGet)
 	api.HandleFunc("/planets/{id}", resources.GetPlanetByID).Methods(http.MethodGet)
-	/*
-	 */
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(port, r))
 }

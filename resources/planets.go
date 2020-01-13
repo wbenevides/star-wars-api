@@ -5,12 +5,14 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/dao"
 	"github.com/wallacebenevides/star-wars-api/models"
 	"gopkg.in/mgo.v2/bson"
 )
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
+	log.Error(msg)
 	respondWithJson(w, code, map[string]string{"error": msg})
 }
 
@@ -21,9 +23,8 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-// GetPlanets is ..
 func GetAllPlanets(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	log.Info("Fetching all planets")
 	planets, err := dao.GetAllPlanets()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
@@ -32,6 +33,7 @@ func GetAllPlanets(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreatePlanet(w http.ResponseWriter, r *http.Request) {
+	log.Info("Creating a planet")
 	defer r.Body.Close()
 	var planet models.Planet
 	if err := json.NewDecoder(r.Body).Decode(&planet); err != nil {
@@ -48,6 +50,7 @@ func CreatePlanet(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPlanetByID(w http.ResponseWriter, r *http.Request) {
+	log.Info("Fetching a planet by ID")
 	params := mux.Vars(r)
 	planet, err := dao.GetPlanetByID(params["id"])
 	if err != nil {
@@ -58,6 +61,7 @@ func GetPlanetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func FindPlanetByName(w http.ResponseWriter, r *http.Request) {
+	log.Info("Finding a planet by name")
 	name := r.URL.Query().Get("name")
 
 	planet, err := dao.FindPlanetByName(name)
@@ -68,6 +72,7 @@ func FindPlanetByName(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeletePlanet(w http.ResponseWriter, r *http.Request) {
+	log.Info("Deleting a planet")
 	defer r.Body.Close()
 	var planet models.Planet
 	if err := json.NewDecoder(r.Body).Decode(&planet); err != nil {

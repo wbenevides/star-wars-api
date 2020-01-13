@@ -1,8 +1,7 @@
 package dao
 
 import (
-	"log"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/models"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -20,7 +19,7 @@ const (
 )
 
 func (m *PlanetsDAO) Connect() {
-
+	log.Info("initializing a session with db", m.Database, " host ", m.Hosts)
 	session, err := mgo.Dial(m.Hosts)
 	if err != nil {
 		log.Fatal(err)
