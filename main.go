@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	hosts    = "localhost"
+	hosts    = "mongodb"
 	database = "star_wars_db"
 )
 

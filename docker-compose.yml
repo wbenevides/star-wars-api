@@ -1,0 +1,22 @@
+version: '3.1'
+
+services:
+    mongodb:
+        image: mongo
+        networks:
+            - production-network
+    golang:
+        build:
+            dockerfile: ./docker/star-wars-api.dockerfile
+            context: .
+        image: wallacebenevides/star-wars-api
+        container_name: start-wars-api
+        ports:
+            - "8080:8080"
+        networks:
+            - production-network
+        depends_on:
+            - mongodb
+networks:
+    production-network:
+        driver: bridge
