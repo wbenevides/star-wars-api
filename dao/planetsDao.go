@@ -54,3 +54,8 @@ func FindPlanetByName(name string) ([]models.Planet, error) {
 	err := db.C(COLLECTION).Find(filter).All(&planets)
 	return planets, err
 }
+
+func DeletePlanet(planet models.Planet) error {
+	err := db.C(COLLECTION).Remove(&planet)
+	return err
+}

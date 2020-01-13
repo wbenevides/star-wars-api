@@ -67,12 +67,15 @@ func FindPlanetByName(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, http.StatusOK, planet)
 }
 
-/*
-
-
-
 func DeletePlanet(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message": "delete called"}`))
-} */
+	defer r.Body.Close()
+	var planet models.Planet
+	if err := json.NewDecoder(r.Body).Decode(&planet); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+	}
+	if err := dao.DeletePlanet(planet); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+	}
+
+	respondWithJson(w, http.StatusOK, map[string]string{"result": "sucess"})
+}
