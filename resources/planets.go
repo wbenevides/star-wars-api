@@ -57,14 +57,19 @@ func GetPlanetByID(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, http.StatusOK, planet)
 }
 
+func FindPlanetByName(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+
+	planet, err := dao.FindPlanetByName(name)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+	}
+	respondWithJson(w, http.StatusOK, planet)
+}
+
 /*
 
 
-func GetPlanetByName(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(`{"message": "post called"}`))
-}
 
 func DeletePlanet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

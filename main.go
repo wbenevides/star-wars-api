@@ -33,10 +33,11 @@ func main() {
 
 	api.HandleFunc("/planets", resources.GetAllPlanets).Methods(http.MethodGet)
 	api.HandleFunc("/planets", resources.CreatePlanet).Methods(http.MethodPost)
+	api.HandleFunc("/planets/findByName", resources.FindPlanetByName).Methods(http.MethodGet)
 	api.HandleFunc("/planets/{id}", resources.GetPlanetByID).Methods(http.MethodGet)
 	/*
 		api.HandleFunc("/planets/{id}", resources.DeletePlanet).Methods(http.MethodDelete)
-		api.HandleFunc("/planets/findByName", resources.GetPlanetByName).Methods(http.MethodGet) */
+	*/
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

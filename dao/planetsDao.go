@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/wallacebenevides/star-wars-api/models"
-	. "github.com/wallacebenevides/star-wars-api/models"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -29,10 +28,10 @@ func (m *PlanetsDAO) Connect() {
 	db = session.DB(m.Database)
 }
 
-func GetAllPlanets() ([]Planet, error) {
-	var movies []Planet
-	err := db.C(COLLECTION).Find(bson.M{}).All(&movies)
-	return movies, err
+func GetAllPlanets() ([]models.Planet, error) {
+	var planets []models.Planet
+	err := db.C(COLLECTION).Find(bson.M{}).All(&planets)
+	return planets, err
 }
 
 func CreatePlanet(planet models.Planet) error {
@@ -40,8 +39,18 @@ func CreatePlanet(planet models.Planet) error {
 	return err
 }
 
-func GetPlanetByID(id string) (Planet, error) {
+func GetPlanetByID(id string) (models.Planet, error) {
 	var planet models.Planet
 	err := db.C(COLLECTION).FindId(bson.ObjectIdHex(id)).One(&planet)
 	return planet, err
+}
+
+func FindPlanetByName(name string) ([]models.Planet, error) {
+	var planets []models.Planet
+	filter := bson.D{{
+		"name",
+		bson.RegEx{Pattern: name},
+	}}
+	err := db.C(COLLECTION).Find(filter).All(&planets)
+	return planets, err
 }
