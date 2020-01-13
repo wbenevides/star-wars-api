@@ -39,3 +39,9 @@ func CreatePlanet(planet models.Planet) error {
 	err := db.C(COLLECTION).Insert(&planet)
 	return err
 }
+
+func GetPlanetByID(id string) (Planet, error) {
+	var planet models.Planet
+	err := db.C(COLLECTION).FindId(bson.ObjectIdHex(id)).One(&planet)
+	return planet, err
+}

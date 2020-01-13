@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/wallacebenevides/star-wars-api/dao"
 	"github.com/wallacebenevides/star-wars-api/models"
 	"gopkg.in/mgo.v2/bson"
@@ -46,12 +47,18 @@ func CreatePlanet(w http.ResponseWriter, r *http.Request) {
 
 }
 
-/*
-func GetPlanetById(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(`{"message": "post called"}`))
+func GetPlanetByID(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	planet, err := dao.GetPlanetByID(params["id"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid Planet ID")
+		return
+	}
+	respondWithJson(w, http.StatusOK, planet)
 }
+
+/*
+
 
 func GetPlanetByName(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
