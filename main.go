@@ -28,7 +28,6 @@ func init() {
 	planetDao.Hosts = hosts
 	planetDao.Database = database
 	planetDao.Connect()
-
 }
 
 func main() {
@@ -39,6 +38,7 @@ func main() {
 	api.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "api v1")
 	})
+	api.Use(loggingMiddleware)
 
 	api.HandleFunc("/planets", resources.GetAllPlanets).Methods(http.MethodGet)
 	api.HandleFunc("/planets", resources.CreatePlanet).Methods(http.MethodPost)
@@ -47,4 +47,11 @@ func main() {
 	api.HandleFunc("/planets/{id}", resources.GetPlanetByID).Methods(http.MethodGet)
 
 	log.Fatal(http.ListenAndServe(port, r))
+}
+
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Info(r.RequestURI)
+		next.ServeHTTP(w, r)
+	})
 }

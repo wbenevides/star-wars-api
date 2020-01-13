@@ -27,7 +27,8 @@ func GetAllPlanets(w http.ResponseWriter, r *http.Request) {
 	log.Info("Fetching all planets")
 	planets, err := dao.GetAllPlanets()
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
+        respondWithError(w, http.StatusInternalServerError, err.Error())
+        return
 	}
 	respondWithJson(w, http.StatusOK, planets)
 }
@@ -67,6 +68,7 @@ func FindPlanetByName(w http.ResponseWriter, r *http.Request) {
 	planet, err := dao.FindPlanetByName(name)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 	respondWithJson(w, http.StatusOK, planet)
 }
@@ -80,7 +82,7 @@ func DeletePlanet(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := dao.DeletePlanet(planet); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
-
 	respondWithJson(w, http.StatusOK, map[string]string{"result": "sucess"})
 }

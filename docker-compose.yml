@@ -5,12 +5,16 @@ services:
         image: mongo
         networks:
             - production-network
+        environment:
+            MONGO_INITDB_DATABASE : star_wars_db
+        volumes:
+            - "./config/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro"
     golang:
         build:
             dockerfile: ./docker/star-wars-api.dockerfile
             context: .
         image: wallacebenevides/star-wars-api
-        container_name: start-wars-api
+        container_name: star-wars-api
         ports:
             - "8080:8080"
         networks:
