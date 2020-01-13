@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/wallacebenevides/star-wars-api/dao"
+	"github.com/wallacebenevides/star-wars-api/models"
+	"gopkg.in/mgo.v2/bson"
 )
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
@@ -19,7 +21,7 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 }
 
 // GetPlanets is ..
-func GetPlanets(w http.ResponseWriter, r *http.Request) {
+func GetAllPlanets(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	planets, err := dao.GetAllPlanets()
 	if err != nil {
@@ -28,12 +30,23 @@ func GetPlanets(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, http.StatusOK, planets)
 }
 
-/* func PostPlanet(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message": "get called"}`))
+func CreatePlanet(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var planet models.Planet
+	if err := json.NewDecoder(r.Body).Decode(&planet); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	planet.ID = bson.NewObjectId()
+	if err := dao.CreatePlanet(planet); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondWithJson(w, http.StatusCreated, planet)
+
 }
 
+/*
 func GetPlanetById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

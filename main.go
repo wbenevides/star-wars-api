@@ -12,7 +12,7 @@ import (
 
 const (
 	hosts    = "localhost"
-	database = "db"
+	database = "star_wars_db"
 )
 
 var planetDao = dao.PlanetsDAO{}
@@ -31,11 +31,12 @@ func main() {
 		fmt.Fprintln(w, "api v1")
 	})
 
-	api.HandleFunc("/planets", resources.GetPlanets).Methods(http.MethodGet)
-	/* api.HandleFunc("/planets", resources.PostPlanet).Methods(http.MethodPost)
-	api.HandleFunc("/planets/{id}", resources.GetPlanetById).Methods(http.MethodGet)
-	api.HandleFunc("/planets/{id}", resources.DeletePlanet).Methods(http.MethodDelete)
-	api.HandleFunc("/planets/findByName", resources.GetPlanetByName).Methods(http.MethodGet) */
+	api.HandleFunc("/planets", resources.GetAllPlanets).Methods(http.MethodGet)
+	api.HandleFunc("/planets", resources.CreatePlanet).Methods(http.MethodPost)
+	/*
+		api.HandleFunc("/planets/{id}", resources.GetPlanetById).Methods(http.MethodGet)
+		api.HandleFunc("/planets/{id}", resources.DeletePlanet).Methods(http.MethodDelete)
+		api.HandleFunc("/planets/findByName", resources.GetPlanetByName).Methods(http.MethodGet) */
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

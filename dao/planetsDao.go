@@ -3,6 +3,7 @@ package dao
 import (
 	"log"
 
+	"github.com/wallacebenevides/star-wars-api/models"
 	. "github.com/wallacebenevides/star-wars-api/models"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -32,4 +33,9 @@ func GetAllPlanets() ([]Planet, error) {
 	var movies []Planet
 	err := db.C(COLLECTION).Find(bson.M{}).All(&movies)
 	return movies, err
+}
+
+func CreatePlanet(planet models.Planet) error {
+	err := db.C(COLLECTION).Insert(&planet)
+	return err
 }
