@@ -8,7 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/dao"
 	"github.com/wallacebenevides/star-wars-api/models"
-	"gopkg.in/mgo.v2/bson"
 )
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
@@ -27,8 +26,8 @@ func GetAllPlanets(w http.ResponseWriter, r *http.Request) {
 	log.Info("Fetching all planets")
 	planets, err := dao.GetAllPlanets()
 	if err != nil {
-        respondWithError(w, http.StatusInternalServerError, err.Error())
-        return
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 	respondWithJson(w, http.StatusOK, planets)
 }
@@ -41,7 +40,6 @@ func CreatePlanet(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	planet.ID = bson.NewObjectId()
 	if err := dao.CreatePlanet(planet); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
