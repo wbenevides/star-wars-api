@@ -13,8 +13,8 @@ import (
 var db *mongo.Database
 
 type PlanetsDAO struct {
-	Hosts    string
-	Database string
+	ConnectionUri string
+	Database      string
 }
 
 const (
@@ -22,9 +22,9 @@ const (
 )
 
 func (m *PlanetsDAO) Connect() {
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	clientOptions := options.Client().ApplyURI(m.ConnectionUri)
 
-	log.Info("initializing a session with db", m.Database, " host ", m.Hosts)
+	log.Info("initializing a session with db", m.Database)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 
 	if err != nil {

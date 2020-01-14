@@ -6,31 +6,35 @@ import (
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"github.com/wallacebenevides/star-wars-api/config"
 	"github.com/wallacebenevides/star-wars-api/dao"
 	"github.com/wallacebenevides/star-wars-api/resources"
 )
 
-const (
-	hosts    = "mongodb"
-	database = "star_wars_db"
-)
-
-const (
-	port = ":8080"
-)
+var configuration config.Config
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp: true,
 	})
 
-	var planetDao = dao.PlanetsDAO{}
-	planetDao.Hosts = hosts
-	planetDao.Database = database
+	// initialize db config
+	configuration = config.Config{}
+	configuration.Read()
+	connectionUri := configuration.Database.ConnectionUri
+	database := configuration.Database.Database
+
+	log.Info(connectionUri, database)
+
+	var planetDao = dao.PlanetsDAO{
+		connectionUri,
+		database,
+	}
 	planetDao.Connect()
 }
 
 func main() {
+	port := configuration.Server.Port
 
 	r := mux.NewRouter()
 	log.Info("star wars planets api is listening on port ", port)
@@ -46,7 +50,7 @@ func main() {
 	api.HandleFunc("/planets/findByName", resources.FindPlanetByName).Methods(http.MethodGet)
 	api.HandleFunc("/planets/{id}", resources.GetPlanetByID).Methods(http.MethodGet)
 
-	log.Fatal(http.ListenAndServe(port, r))
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
