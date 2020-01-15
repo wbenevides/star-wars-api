@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"log"
 
 	"github.com/wallacebenevides/star-wars-api/config"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,7 +17,7 @@ type DatabaseHelper interface {
 type CollectionHelper interface {
 	FindOne(context.Context, interface{}) SingleResultHelper
 	InsertOne(context.Context, interface{}) (interface{}, error)
-	DeleteOne(ctx context.Context, filter interface{}) (int64, error)
+	DeleteOne(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error)
 	Find(ctx context.Context, filter interface{}) (CursorHelper, error)
 }
 
@@ -56,6 +57,7 @@ type mongoSingleResult struct {
 }
 
 func NewClient(cnf *config.Database) (ClientHelper, error) {
+	log.Println("initializing a session with db ", cnf.DatabaseName, cnf.Uri)
 	clientOptions := options.Client().ApplyURI(cnf.Uri)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 
@@ -90,7 +92,7 @@ func (md *mongoDatabase) Client() ClientHelper {
 
 func (mc *mongoCollection) Find(ctx context.Context, filter interface{}) (CursorHelper, error) {
 	cursor, err := mc.coll.Find(ctx, filter)
-	return &mongoCursor{cs: cursor}, err
+	return cursor, err
 }
 
 func (mc *mongoCollection) FindOne(ctx context.Context, filter interface{}) SingleResultHelper {
@@ -103,9 +105,9 @@ func (mc *mongoCollection) InsertOne(ctx context.Context, document interface{}) 
 	return id.InsertedID, err
 }
 
-func (mc *mongoCollection) DeleteOne(ctx context.Context, filter interface{}) (int64, error) {
-	count, err := mc.coll.DeleteOne(ctx, filter)
-	return count.DeletedCount, err
+func (mc *mongoCollection) DeleteOne(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error) {
+	deleteResult, err := mc.coll.DeleteOne(ctx, filter)
+	return deleteResult, err
 }
 
 func (sr *mongoSingleResult) Decode(v interface{}) error {
@@ -122,6 +124,7 @@ func (cs *mongoCursor) Close(ctx context.Context) error {
 func (cs *mongoCursor) Decode(v interface{}) error {
 	return cs.Decode(v)
 }
+
 func (cs *mongoCursor) Next(ctx context.Context) bool {
 	return cs.Next(ctx)
 }

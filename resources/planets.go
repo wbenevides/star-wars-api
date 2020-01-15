@@ -41,11 +41,12 @@ func (h *PlanetHandler) Create() http.HandlerFunc {
 			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
-		if err := h.db.Create(&planet); err != nil {
+		createdPlanet, err := h.db.Create(&planet)
+		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		respondWithJson(w, http.StatusCreated, planet)
+		respondWithJson(w, http.StatusCreated, createdPlanet)
 	}
 }
 
@@ -79,11 +80,11 @@ func (h *PlanetHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Deleting a planet")
 		defer r.Body.Close()
-		var planet models.Planet
-		if err := json.NewDecoder(r.Body).Decode(&planet); err != nil {
+		var body struct{ id string }
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		}
-		if err := h.db.Delete(&planet); err != nil {
+		if err := h.db.Delete(body.id); err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}

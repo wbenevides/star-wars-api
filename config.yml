@@ -1,6 +1,6 @@
 database:
   uri: "mongodb://mongodb:27017"
-  database-name: "star_wars_db"
+  databasename: "star_wars_db"
   username: ""
   password: ""
 
