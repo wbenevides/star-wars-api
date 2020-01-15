@@ -1,6 +1,8 @@
 database:
-  connectionUri: "mongodb://mongodb:27017"
-  database: "star_wars_db"
+  uri: "mongodb://mongodb:27017"
+  database-name: "star_wars_db"
+  username: ""
+  password: ""
 
 server:
   port: "8080"
