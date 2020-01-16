@@ -9,6 +9,7 @@ import (
 	"github.com/wallacebenevides/star-wars-api/dao"
 	"github.com/wallacebenevides/star-wars-api/db"
 	"github.com/wallacebenevides/star-wars-api/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PlanetHandler struct {
@@ -41,12 +42,14 @@ func (h *PlanetHandler) Create() http.HandlerFunc {
 			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
-		createdPlanet, err := h.db.Create(&planet)
-		if err != nil {
+
+		planet.ID = primitive.NewObjectID()
+		if err := h.db.Create(&planet); err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		respondWithJson(w, http.StatusCreated, createdPlanet)
+		result := createSuccessResult()
+		respondWithJson(w, http.StatusCreated, result)
 	}
 }
 
@@ -80,15 +83,17 @@ func (h *PlanetHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Deleting a planet")
 		defer r.Body.Close()
-		var body struct{ id string }
+		var body struct{ ID string }
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		}
-		if err := h.db.Delete(body.id); err != nil {
+
+		if err := h.db.Delete(body.ID); err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		respondWithJson(w, http.StatusOK, map[string]string{"result": "sucess"})
+		result := createSuccessResult()
+		respondWithJson(w, http.StatusOK, result)
 	}
 }
 
@@ -102,4 +107,8 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
+}
+
+func createSuccessResult() map[string]string {
+	return map[string]string{"result": "sucess"}
 }

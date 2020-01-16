@@ -16,7 +16,7 @@ const (
 
 type PlanetsDAO interface {
 	FindAll() ([]models.Planet, error)
-	Create(*models.Planet) (interface{}, error)
+	Create(*models.Planet) error
 	FindById(id string) (*models.Planet, error)
 	FindByName(name string) ([]models.Planet, error)
 	Delete(id string) error
@@ -44,23 +44,14 @@ func (pd *planetsDAO) FindAll() ([]models.Planet, error) {
 	return planets, nil
 }
 
-func (pd *planetsDAO) Create(planet *models.Planet) (interface{}, error) {
-	insertedID, err := pd.db.Collection(COLLECTION).InsertOne(context.TODO(), planet)
+func (pd *planetsDAO) Create(planet *models.Planet) error {
+	_, err := pd.db.Collection(COLLECTION).InsertOne(context.TODO(), planet)
 	if err != nil {
 		log.WithField("name", planet.Name).Error("There was an error creating the planet")
-		return nil, err
+		return err
 	}
 	log.WithField("name", planet.Name).Debug("Planet created")
-	if oid, ok := insertedID.(primitive.ObjectID); ok {
-		return map[string]interface{}{
-			"id": oid.String(),
-		}, nil
-	}
-	// Not objectid.ObjectID
-	return map[string]interface{}{
-		"id": "",
-	}, nil
-
+	return nil
 }
 
 func (pd *planetsDAO) FindById(id string) (*models.Planet, error) {
@@ -97,7 +88,9 @@ func (pd *planetsDAO) FindByName(name string) ([]models.Planet, error) {
 func (pd *planetsDAO) Delete(id string) error {
 	withFild := log.WithField("id", id)
 	// Declare a primitive ObjectID from a hexadecimal string
+	log.Debug("Delete(id string)")
 	idPrimitive, err := primitive.ObjectIDFromHex(id)
+	log.Debug("ObjectIDFromHex(id)")
 	if err != nil {
 		return err
 	}
