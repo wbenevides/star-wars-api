@@ -15,8 +15,8 @@ type DatabaseHelper interface {
 }
 
 type CollectionHelper interface {
-	FindOne(context.Context, interface{}) SingleResultHelper
-	InsertOne(context.Context, interface{}) (interface{}, error)
+	FindOne(ctx context.Context, filter interface{}) SingleResultHelper
+	InsertOne(ctx context.Context, document interface{}) (interface{}, error)
 	DeleteOne(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error)
 	Find(ctx context.Context, filter interface{}) (CursorHelper, error)
 }
@@ -31,9 +31,9 @@ type ClientHelper interface {
 
 type CursorHelper interface {
 	All(ctx context.Context, v interface{}) error
-	Close(context.Context) error
-	Decode(interface{}) error
-	Next(context.Context) bool
+	Close(ctx context.Context) error
+	Decode(v interface{}) error
+	Next(ctx context.Context) bool
 }
 
 type mongoClient struct {
