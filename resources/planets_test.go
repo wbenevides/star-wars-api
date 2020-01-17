@@ -9,6 +9,8 @@ import (
 
 	"github.com/wallacebenevides/star-wars-api/dao"
 	"github.com/wallacebenevides/star-wars-api/db"
+	"github.com/wallacebenevides/star-wars-api/mocks"
+	"github.com/wallacebenevides/star-wars-api/models"
 )
 
 func TestNewPlanetHandler(t *testing.T) {
@@ -36,6 +38,21 @@ func TestPlanetHandler_GetAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	dbHelper := &mocks.DatabaseHelper{}
+	planetDao := dao.NewPlanetsDao(dbHelper)
+	planetDao = &mocks.PlanetsDAO{}
+
+	dataMock := []models.Planet{{Name: "Alderaan"}}
+
+	planetDao.(*mocks.PlanetsDAO).
+		On("FindAll").
+		Return(dataMock, nil)
+
+	planetDao.(*mocks.PlanetsDAO).
+		On("FindAll").
+		Return(dataMock, nil)
+
 	rr := httptest.NewRecorder()
 	getAll := NewPlanetHandler(nil).GetAll()
 	handler := http.HandlerFunc(getAll)
@@ -43,7 +60,7 @@ func TestPlanetHandler_GetAll(t *testing.T) {
 
 	// Check the status code.
 	if status := rr.Code; status != http.StatusOK {
-		t.Error("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
 	// Check the response body is what we expect.
