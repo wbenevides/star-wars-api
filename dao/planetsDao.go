@@ -3,9 +3,12 @@ package dao
 import (
 	"context"
 	"errors"
+	"strings"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/db"
 	"github.com/wallacebenevides/star-wars-api/models"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 const (
@@ -15,8 +18,8 @@ const (
 type PlanetsDAO interface {
 	FindAll(ctx context.Context, filter interface{}) ([]models.Planet, error)
 	Create(ctx context.Context, planets *models.Planet) error
-	FindByID(cxt context.Context, filter interface{}) (*models.Planet, error)
-	FindByName(cxt context.Context, filter interface{}) ([]models.Planet, error)
+	FindOne(cxt context.Context, filter interface{}) (*models.Planet, error)
+	FindByName(cxt context.Context, name string) ([]models.Planet, error)
 	Delete(cxt context.Context, filter interface{}) error
 }
 
@@ -51,7 +54,7 @@ func (pd *planetsDAO) Create(ctx context.Context, planet *models.Planet) error {
 	return nil
 }
 
-func (pd *planetsDAO) FindByID(ctx context.Context, filter interface{}) (*models.Planet, error) {
+func (pd *planetsDAO) FindOne(ctx context.Context, filter interface{}) (*models.Planet, error) {
 	var planet models.Planet
 	if err := pd.db.Collection(COLLECTION).FindOne(ctx, filter).Decode(&planet); err != nil {
 		return nil, err
@@ -59,9 +62,9 @@ func (pd *planetsDAO) FindByID(ctx context.Context, filter interface{}) (*models
 	return &planet, nil
 }
 
-func (pd *planetsDAO) FindByName(ctx context.Context, filter interface{}) ([]models.Planet, error) {
+func (pd *planetsDAO) FindByName(ctx context.Context, name string) ([]models.Planet, error) {
 	var planets []models.Planet
-	cursor, err := pd.db.Collection(COLLECTION).Find(ctx, filter)
+	cursor, err := pd.db.Collection(COLLECTION).Find(ctx, bson.D{{}})
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +74,10 @@ func (pd *planetsDAO) FindByName(ctx context.Context, filter interface{}) ([]mod
 		if err := cursor.Decode(&planet); err != nil {
 			return nil, err
 		}
-		planets = append(planets, planet)
+		hasName := strings.Contains(strings.ToUpper(planet.Name), strings.ToUpper(name))
+		if hasName {
+			planets = append(planets, planet)
+		}
 	}
 	return planets, err
 }

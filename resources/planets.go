@@ -21,6 +21,11 @@ func NewPlanetHandler(dao dao.PlanetsDAO) *PlanetHandler {
 	return &PlanetHandler{dao}
 }
 
+// GetAll : Get All Entries
+// URL : /entries
+// Parameters: none
+// Method: GET
+// Output: JSON Encoded Entries object if found else JSON Encoded Exception.
 func (h *PlanetHandler) GetAll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Fetching all planets")
@@ -62,7 +67,7 @@ func (h *PlanetHandler) GetByID() http.HandlerFunc {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 		}
 		filter := bson.M{"_id": idPrimitive}
-		planet, err := h.db.FindByID(context.TODO(), filter)
+		planet, err := h.db.FindOne(context.TODO(), filter)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Invalid Planet ID")
 			return
@@ -75,8 +80,7 @@ func (h *PlanetHandler) FindByName() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Finding a planet by name")
 		name := r.URL.Query().Get("name")
-		filter := bson.D{{"name", name}}
-		planet, err := h.db.FindByName(context.TODO(), filter)
+		planet, err := h.db.FindByName(context.TODO(), name)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 			return
