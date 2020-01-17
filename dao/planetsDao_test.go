@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/wallacebenevides/star-wars-api/db"
 	"github.com/wallacebenevides/star-wars-api/mocks"
 	"github.com/wallacebenevides/star-wars-api/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,23 +15,16 @@ import (
 
 func Test_planetsDAO_FindAll(t *testing.T) {
 
-	// Define variables for interfaces
-	var dbHelper db.DatabaseHelper
-	var collectionHelper db.CollectionHelper
-	var cursorHelperErr db.CursorHelper
-	var cursorHelperCorrect db.CursorHelper
+	dbHelper := &mocks.DatabaseHelper{}
+	collectionHelper := &mocks.CollectionHelper{}
+	cursorHelperErr := &mocks.CursorHelper{}
+	cursorHelperCorrect := &mocks.CursorHelper{}
 
-	//Set interfaces implementation to mocked structures
-	dbHelper = &mocks.DatabaseHelper{}
-	collectionHelper = &mocks.CollectionHelper{}
-	cursorHelperErr = &mocks.CursorHelper{}
-	cursorHelperCorrect = &mocks.CursorHelper{}
-
-	cursorHelperErr.(*mocks.CursorHelper).
+	cursorHelperErr.
 		On("All", context.Background(), mock.AnythingOfType("*[]models.Planet")).
 		Return(nil, errors.New("mocked-error"))
 
-	cursorHelperCorrect.(*mocks.CursorHelper).
+	cursorHelperCorrect.
 		On("All", context.Background(), mock.AnythingOfType("*[]models.Planet")).
 		Return(nil, nil).Run(func(args mock.Arguments) {
 		planets := args.Get(0).([]models.Planet)
@@ -41,15 +33,15 @@ func Test_planetsDAO_FindAll(t *testing.T) {
 		}
 	})
 
-	collectionHelper.(*mocks.CollectionHelper).
+	collectionHelper.
 		On("Find", context.Background(), bson.M{"error": true}).
 		Return(cursorHelperErr)
 
-	collectionHelper.(*mocks.CollectionHelper).
+	collectionHelper.
 		On("Find", context.Background(), bson.M{"error": false}).
 		Return(cursorHelperCorrect)
 
-	dbHelper.(*mocks.DatabaseHelper).
+	dbHelper.
 		On("Collection", "planets").
 		Return(collectionHelper)
 
@@ -68,38 +60,31 @@ func Test_planetsDAO_FindAll(t *testing.T) {
 
 func Test_planetsDAO_FindOne(t *testing.T) {
 
-	// Define variables for interfaces
-	var dbHelper db.DatabaseHelper
-	var collectionHelper db.CollectionHelper
-	var srHelperErr db.SingleResultHelper
-	var srHelperCorrect db.SingleResultHelper
+	dbHelper := &mocks.DatabaseHelper{}
+	collectionHelper := &mocks.CollectionHelper{}
+	srHelperErr := &mocks.SingleResultHelper{}
+	srHelperCorrect := &mocks.SingleResultHelper{}
 
-	//Set interfaces implementation to mocked structures
-	dbHelper = &mocks.DatabaseHelper{}
-	collectionHelper = &mocks.CollectionHelper{}
-	srHelperErr = &mocks.SingleResultHelper{}
-	srHelperCorrect = &mocks.SingleResultHelper{}
-
-	srHelperErr.(*mocks.SingleResultHelper).
+	srHelperErr.
 		On("Decode", mock.AnythingOfType("*models.Planet")).
 		Return(errors.New("mocked-error"))
 
-	srHelperCorrect.(*mocks.SingleResultHelper).
+	srHelperCorrect.
 		On("Decode", mock.AnythingOfType("*models.Planet")).
 		Return(nil).Run(func(args mock.Arguments) {
 		arg := args.Get(0).(*models.Planet)
 		arg.Name = "mocked-planet"
 	})
 
-	collectionHelper.(*mocks.CollectionHelper).
+	collectionHelper.
 		On("FindOne", context.Background(), bson.M{"error": true}).
 		Return(srHelperErr)
 
-	collectionHelper.(*mocks.CollectionHelper).
+	collectionHelper.
 		On("FindOne", context.Background(), bson.M{"error": false}).
 		Return(srHelperCorrect)
 
-	dbHelper.(*mocks.DatabaseHelper).
+	dbHelper.
 		On("Collection", "planets").
 		Return(collectionHelper)
 
@@ -115,23 +100,19 @@ func Test_planetsDAO_FindOne(t *testing.T) {
 }
 
 func Test_planetsDAO_Create(t *testing.T) {
-	// Define variables for interfaces
-	var dbHelper db.DatabaseHelper
-	var collectionHelper db.CollectionHelper
 
-	//Set interfaces implementation to mocked structures
-	dbHelper = &mocks.DatabaseHelper{}
-	collectionHelper = &mocks.CollectionHelper{}
+	dbHelper := &mocks.DatabaseHelper{}
+	collectionHelper := &mocks.CollectionHelper{}
 
-	collectionHelper.(*mocks.CollectionHelper).
+	collectionHelper.
 		On("InsertOne", context.Background(), &models.Planet{Name: "mocked-planet-error"}).
 		Return(nil, errors.New("mocked-error"))
 
-	collectionHelper.(*mocks.CollectionHelper).
+	collectionHelper.
 		On("InsertOne", context.Background(), &models.Planet{Name: "mocked-planet-correct"}).
 		Return(nil, nil)
 
-	dbHelper.(*mocks.DatabaseHelper).
+	dbHelper.
 		On("Collection", "planets").
 		Return(collectionHelper)
 
@@ -145,28 +126,24 @@ func Test_planetsDAO_Create(t *testing.T) {
 }
 
 func Test_planetsDAO_Delete(t *testing.T) {
-	// Define variables for interfaces
-	var dbHelper db.DatabaseHelper
-	var collectionHelper db.CollectionHelper
 
-	//Set interfaces implementation to mocked structures
-	dbHelper = &mocks.DatabaseHelper{}
-	collectionHelper = &mocks.CollectionHelper{}
-	deleteResultCorrect := mongo.DeleteResult{1}
+	dbHelper := &mocks.DatabaseHelper{}
+	collectionHelper := &mocks.CollectionHelper{}
+	deleteResultCorrect := mongo.DeleteResult{DeletedCount: 1}
 
-	collectionHelper.(*mocks.CollectionHelper).
+	collectionHelper.
 		On("DeleteOne", context.Background(), bson.M{"db-error": true}).
 		Return(nil, errors.New("mocked-db-error"))
 
-	collectionHelper.(*mocks.CollectionHelper).
+	collectionHelper.
 		On("DeleteOne", context.Background(), bson.M{"notFound-error": true}).
 		Return(nil, errors.New("document not found"))
 
-	collectionHelper.(*mocks.CollectionHelper).
+	collectionHelper.
 		On("DeleteOne", context.Background(), bson.M{"error": false}).
 		Return(&deleteResultCorrect, nil)
 
-	dbHelper.(*mocks.DatabaseHelper).
+	dbHelper.
 		On("Collection", "planets").
 		Return(collectionHelper)
 
@@ -183,20 +160,14 @@ func Test_planetsDAO_Delete(t *testing.T) {
 }
 
 func Test_planetsDAO_FindByName(t *testing.T) {
-	// Define variables for interfaces
-	var dbHelper db.DatabaseHelper
 
-	//Set interfaces implementation to mocked structures
-	dbHelper = &mocks.DatabaseHelper{}
+	planetDao := &mocks.PlanetsDAO{}
 
-	planetDao := NewPlanetsDao(dbHelper)
-	planetDao = &mocks.PlanetsDAO{}
-
-	planetDao.(*mocks.PlanetsDAO).
+	planetDao.
 		On("FindByName", context.Background(), "mocked-planet-error").
 		Return(nil, errors.New("mocked-error"))
 
-	planetDao.(*mocks.PlanetsDAO).
+	planetDao.
 		On("FindByName", context.Background(), "mocked-planet-correct").
 		Return([]models.Planet{
 			{Name: "mocked-planet"},
