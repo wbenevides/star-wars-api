@@ -21,25 +21,27 @@ func Test_planetsDAO_FindAll(t *testing.T) {
 	cursorHelperCorrect := &mocks.CursorHelper{}
 
 	cursorHelperErr.
-		On("All", context.Background(), mock.AnythingOfType("*[]models.Planet")).
+		On("All", context.Background(), mock.AnythingOfType("[]models.Planet")).
 		Return(nil, errors.New("mocked-error"))
 
+	cursorCorrectResult := []models.Planet{{Name: "mocked-planet"}}
+
 	cursorHelperCorrect.
-		On("All", context.Background(), mock.AnythingOfType("*[]models.Planet")).
-		Return(nil, nil).Run(func(args mock.Arguments) {
-		planets := args.Get(0).([]models.Planet)
-		for _, planet := range planets {
-			planet.Name = "mocked-planet"
-		}
-	})
+		On("All", context.Background(), mock.AnythingOfType("[]models.Planet")).
+		Return(cursorCorrectResult, nil)
+
+	// call cursor error
+	collectionHelper.
+		On("Find", context.Background(), bson.M{"cursor-error": true}).
+		Return(nil, cursorHelperErr)
 
 	collectionHelper.
 		On("Find", context.Background(), bson.M{"error": true}).
-		Return(cursorHelperErr)
+		Return(nil, errors.New("mocked-error"))
 
 	collectionHelper.
 		On("Find", context.Background(), bson.M{"error": false}).
-		Return(cursorHelperCorrect)
+		Return(cursorHelperCorrect, nil)
 
 	dbHelper.
 		On("Collection", "planets").
@@ -47,15 +49,18 @@ func Test_planetsDAO_FindAll(t *testing.T) {
 
 	planetDao := NewPlanetsDao(dbHelper)
 	planets, err := planetDao.FindAll(context.Background(), bson.M{"error": true})
+	t.Log(err)
 	assert.Empty(t, planets)
 	assert.EqualError(t, err, "mocked-error")
 
 	planets, err = planetDao.FindAll(context.Background(), bson.M{"error": false})
-	expected := &[]models.Planet{
-		{Name: "mocked-planet"},
-	}
-	assert.Equal(t, expected, planets)
+	expected := []models.Planet{{Name: "mocked-planet"}}
+	assert.ObjectsAreEqualValues(expected, planets)
 	assert.NoError(t, err)
+
+	planets, err = planetDao.FindAll(context.Background(), bson.M{"cursor-error": true})
+	assert.Empty(t, planets)
+	assert.EqualError(t, err, "mocked-error")
 }
 
 func Test_planetsDAO_FindOne(t *testing.T) {

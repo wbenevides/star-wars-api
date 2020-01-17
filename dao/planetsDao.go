@@ -37,7 +37,7 @@ func (pd *planetsDAO) FindAll(ctx context.Context, filter interface{}) ([]models
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	//defer cursor.Close(ctx)
 	if err := cursor.All(ctx, &planets); err != nil {
 		return nil, err
 	}
