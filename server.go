@@ -7,7 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/config"
-	"github.com/wallacebenevides/star-wars-api/db"
+    "github.com/wallacebenevides/star-wars-api/db"
+    "github.com/wallacebenevides/star-wars-api/dao"
 	"github.com/wallacebenevides/star-wars-api/resources"
 )
 
@@ -26,8 +27,9 @@ func main() {
 	}
 	log.Info("Connected to MongoDB!")
 
-	database := db.NewDatabase(&config.Database, client)
-	planetHandler := resources.NewPlanetHandler(database)
+    database := db.NewDatabase(&config.Database, client)
+    dao := dao.NewPlanetsDao(database)
+	planetHandler := resources.NewPlanetHandler(dao)
 
 	r := mux.NewRouter()
 	log.Info("star wars planets api is listening on port ", config.Server.Port)

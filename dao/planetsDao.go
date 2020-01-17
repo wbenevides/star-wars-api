@@ -6,8 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/db"
 	"github.com/wallacebenevides/star-wars-api/models"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -15,11 +13,11 @@ const (
 )
 
 type PlanetsDAO interface {
-	FindAll() ([]models.Planet, error)
-	Create(*models.Planet) error
-	FindById(id string) (*models.Planet, error)
-	FindByName(name string) ([]models.Planet, error)
-	Delete(id string) error
+	FindAll(ctx context.Context, filter interface{}) ([]models.Planet, error)
+	Create(ctx context.Context, planets *models.Planet) error
+	FindByID(cxt context.Context, filter interface{}) (*models.Planet, error)
+	FindByName(cxt context.Context, filter interface{}) ([]models.Planet, error)
+	Delete(cxt context.Context, filter interface{}) error
 }
 
 type planetsDAO struct {
@@ -30,22 +28,21 @@ func NewPlanetsDao(db db.DatabaseHelper) PlanetsDAO {
 	return &planetsDAO{db: db}
 }
 
-func (pd *planetsDAO) FindAll() ([]models.Planet, error) {
+func (pd *planetsDAO) FindAll(ctx context.Context, filter interface{}) ([]models.Planet, error) {
 	var planets []models.Planet
-	cursor, err := pd.db.Collection(COLLECTION).Find(context.TODO(), bson.D{{}})
+	cursor, err := pd.db.Collection(COLLECTION).Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(context.TODO())
-	if err := cursor.All(context.TODO(), &planets); err != nil {
+	defer cursor.Close(ctx)
+	if err := cursor.All(ctx, &planets); err != nil {
 		return nil, err
 	}
-
 	return planets, nil
 }
 
-func (pd *planetsDAO) Create(planet *models.Planet) error {
-	_, err := pd.db.Collection(COLLECTION).InsertOne(context.TODO(), planet)
+func (pd *planetsDAO) Create(ctx context.Context, planet *models.Planet) error {
+	_, err := pd.db.Collection(COLLECTION).InsertOne(ctx, planet)
 	if err != nil {
 		log.WithField("name", planet.Name).Error("There was an error creating the planet")
 		return err
@@ -54,28 +51,22 @@ func (pd *planetsDAO) Create(planet *models.Planet) error {
 	return nil
 }
 
-func (pd *planetsDAO) FindById(id string) (*models.Planet, error) {
-	idPrimitive, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
-	filter := bson.M{"_id": idPrimitive}
+func (pd *planetsDAO) FindByID(ctx context.Context, filter interface{}) (*models.Planet, error) {
 	var planet models.Planet
-	if err := pd.db.Collection(COLLECTION).FindOne(context.TODO(), filter).Decode(&planet); err != nil {
+	if err := pd.db.Collection(COLLECTION).FindOne(ctx, filter).Decode(&planet); err != nil {
 		return nil, err
 	}
-	return &planet, err
+	return &planet, nil
 }
 
-func (pd *planetsDAO) FindByName(name string) ([]models.Planet, error) {
-	filter := bson.D{{"name", name}}
+func (pd *planetsDAO) FindByName(ctx context.Context, filter interface{}) ([]models.Planet, error) {
 	var planets []models.Planet
-	cursor, err := pd.db.Collection(COLLECTION).Find(context.TODO(), filter)
+	cursor, err := pd.db.Collection(COLLECTION).Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(context.TODO())
-	for cursor.Next(context.TODO()) {
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
 		var planet models.Planet
 		if err := cursor.Decode(&planet); err != nil {
 			return nil, err
@@ -85,23 +76,14 @@ func (pd *planetsDAO) FindByName(name string) ([]models.Planet, error) {
 	return planets, err
 }
 
-func (pd *planetsDAO) Delete(id string) error {
-	withFild := log.WithField("id", id)
-	// Declare a primitive ObjectID from a hexadecimal string
-	log.Debug("Delete(id string)")
-	idPrimitive, err := primitive.ObjectIDFromHex(id)
-	log.Debug("ObjectIDFromHex(id)")
-	if err != nil {
-		return err
-	}
-	filter := bson.M{"_id": idPrimitive}
-	result, err := pd.db.Collection(COLLECTION).DeleteOne(context.TODO(), filter)
+func (pd *planetsDAO) Delete(ctx context.Context, filter interface{}) error {
+	result, err := pd.db.Collection(COLLECTION).DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
 	if result.DeletedCount == 0 {
 		return errors.New("document not found")
 	}
-	withFild.Debug("Planet removed")
+	log.Debug("Planet removed")
 	return nil
 }

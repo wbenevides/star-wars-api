@@ -1,14 +1,15 @@
 package resources
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/dao"
-	"github.com/wallacebenevides/star-wars-api/db"
 	"github.com/wallacebenevides/star-wars-api/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -16,15 +17,14 @@ type PlanetHandler struct {
 	db dao.PlanetsDAO
 }
 
-func NewPlanetHandler(db db.DatabaseHelper) *PlanetHandler {
-	dao := dao.NewPlanetsDao(db)
+func NewPlanetHandler(dao dao.PlanetsDAO) *PlanetHandler {
 	return &PlanetHandler{dao}
 }
 
 func (h *PlanetHandler) GetAll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Fetching all planets")
-		planets, err := h.db.FindAll()
+		planets, err := h.db.FindAll(context.TODO(), bson.D{{}})
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -42,9 +42,8 @@ func (h *PlanetHandler) Create() http.HandlerFunc {
 			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
-
 		planet.ID = primitive.NewObjectID()
-		if err := h.db.Create(&planet); err != nil {
+		if err := h.db.Create(context.TODO(), &planet); err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -57,7 +56,13 @@ func (h *PlanetHandler) GetByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Fetching a planet by ID")
 		params := mux.Vars(r)
-		planet, err := h.db.FindById(params["id"])
+
+		idPrimitive, err := primitive.ObjectIDFromHex(params["id"])
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+		}
+		filter := bson.M{"_id": idPrimitive}
+		planet, err := h.db.FindByID(context.TODO(), filter)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Invalid Planet ID")
 			return
@@ -70,7 +75,8 @@ func (h *PlanetHandler) FindByName() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Finding a planet by name")
 		name := r.URL.Query().Get("name")
-		planet, err := h.db.FindByName(name)
+		filter := bson.D{{"name", name}}
+		planet, err := h.db.FindByName(context.TODO(), filter)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 			return
@@ -88,7 +94,13 @@ func (h *PlanetHandler) Delete() http.HandlerFunc {
 			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		}
 
-		if err := h.db.Delete(body.ID); err != nil {
+		// Declare a primitive ObjectID from a hexadecimal string
+		idPrimitive, err := primitive.ObjectIDFromHex(body.ID)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		filter := bson.M{"_id": idPrimitive}
+		if err := h.db.Delete(context.TODO(), filter); err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
