@@ -15,50 +15,26 @@ import (
 
 func Test_planetsDAO_FindAll(t *testing.T) {
 
-	dbHelper := &mocks.DatabaseHelper{}
-	collectionHelper := &mocks.CollectionHelper{}
-	cursorHelperErr := &mocks.CursorHelper{}
-	cursorHelperCorrect := &mocks.CursorHelper{}
+	planetDao := &mocks.PlanetsDAO{}
 
-	cursorHelperErr.
-		On("All", context.Background(), mock.AnythingOfType("[]models.Planet")).
-		Return(nil, errors.New("mocked-error"))
+	planetDao.
+		On("FindAll", context.Background(), bson.M{"error": false}).
+		Return([]models.Planet{
+			{Name: "mocked-planet"},
+		}, nil)
 
-	cursorCorrectResult := []models.Planet{{Name: "mocked-planet"}}
-
-	cursorHelperCorrect.
-		On("All", context.Background(), mock.AnythingOfType("[]models.Planet")).
-		Return(cursorCorrectResult, nil)
-
-	// call cursor error
-	collectionHelper.
-		On("Find", context.Background(), bson.M{"cursor-error": true}).
-		Return(nil, cursorHelperErr)
-
-	collectionHelper.
-		On("Find", context.Background(), bson.M{"error": true}).
-		Return(nil, errors.New("mocked-error"))
-
-	collectionHelper.
-		On("Find", context.Background(), bson.M{"error": false}).
-		Return(cursorHelperCorrect, nil)
-
-	dbHelper.
-		On("Collection", "planets").
-		Return(collectionHelper)
-
-	planetDao := NewPlanetsDao(dbHelper)
-	planets, err := planetDao.FindAll(context.Background(), bson.M{"error": true})
-	t.Log(err)
-	assert.Empty(t, planets)
-	assert.EqualError(t, err, "mocked-error")
-
-	planets, err = planetDao.FindAll(context.Background(), bson.M{"error": false})
-	expected := []models.Planet{{Name: "mocked-planet"}}
-	assert.ObjectsAreEqualValues(expected, planets)
+	planets, err := planetDao.FindAll(context.Background(), bson.M{"error": false})
+	expected := []models.Planet{
+		{Name: "mocked-planet"},
+	}
+	assert.Equal(t, expected, planets)
 	assert.NoError(t, err)
 
-	planets, err = planetDao.FindAll(context.Background(), bson.M{"cursor-error": true})
+	planetDao.
+		On("FindAll", context.Background(), bson.M{"error": true}).
+		Return(nil, errors.New("mocked-error"))
+
+	planets, err = planetDao.FindAll(context.Background(), bson.M{"error": true})
 	assert.Empty(t, planets)
 	assert.EqualError(t, err, "mocked-error")
 }
