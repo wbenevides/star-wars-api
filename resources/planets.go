@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/dao"
+	"github.com/wallacebenevides/star-wars-api/db"
 	"github.com/wallacebenevides/star-wars-api/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,11 +22,6 @@ func NewPlanetHandler(dao dao.PlanetsDAO) *PlanetHandler {
 	return &PlanetHandler{dao}
 }
 
-// GetAll : Get All Entries
-// URL : /entries
-// Parameters: none
-// Method: GET
-// Output: JSON Encoded Entries object if found else JSON Encoded Exception.
 func (h *PlanetHandler) GetAll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Fetching all planets")
@@ -47,7 +43,8 @@ func (h *PlanetHandler) Create() http.HandlerFunc {
 			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 			return
 		}
-		planet.ID = primitive.NewObjectID()
+		idHelper := db.ObjectID()
+		planet.ID = idHelper.NewObjectID()
 		if err := h.db.Create(context.TODO(), &planet); err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return

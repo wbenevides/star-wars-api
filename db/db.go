@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/wallacebenevides/star-wars-api/config"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -35,6 +36,12 @@ type CursorHelper interface {
 	Decode(v interface{}) error
 	Next(ctx context.Context) bool
 }
+
+type ObjectIDHelper interface {
+	NewObjectID() primitive.ObjectID
+}
+
+type mongoObjectId struct{}
 
 type mongoClient struct {
 	cl *mongo.Client
@@ -73,6 +80,10 @@ func NewClient(cnf *config.Database) (ClientHelper, error) {
 
 func NewDatabase(cnf *config.Database, client ClientHelper) DatabaseHelper {
 	return client.Database(cnf.DatabaseName)
+}
+
+func ObjectID() ObjectIDHelper {
+	return &mongoObjectId{}
 }
 
 func (mc *mongoClient) Database(dbName string) DatabaseHelper {
@@ -127,4 +138,8 @@ func (cs *mongoCursor) Decode(v interface{}) error {
 
 func (cs *mongoCursor) Next(ctx context.Context) bool {
 	return cs.Next(ctx)
+}
+
+func (id *mongoObjectId) NewObjectID() primitive.ObjectID {
+	return primitive.NewObjectID()
 }
