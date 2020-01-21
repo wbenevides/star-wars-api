@@ -58,17 +58,19 @@ func (h *PlanetHandler) GetByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Fetching a planet by ID")
 		params := mux.Vars(r)
-
-		log.Println("params", params["id"])
-
 		idPrimitive, err := primitive.ObjectIDFromHex(params["id"])
 		if err != nil {
-			respondWithError(w, http.StatusBadRequest, err.Error())
+			respondWithError(w, http.StatusBadRequest, "Invalid Planet ID")
+			return
 		}
 		filter := bson.M{"_id": idPrimitive}
 		planet, err := h.db.FindOne(context.TODO(), filter)
+		if err != nil && err.Error() == dao.NOT_FOUND_ERROR_MESSAGE {
+			respondWithError(w, http.StatusNotFound, err.Error())
+			return
+		}
 		if err != nil {
-			respondWithError(w, http.StatusBadRequest, "Invalid Planet ID")
+			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		respondWithJson(w, http.StatusOK, planet)
@@ -81,7 +83,11 @@ func (h *PlanetHandler) FindByName() http.HandlerFunc {
 		name := r.URL.Query().Get("name")
 		planets, err := h.db.FindByName(context.TODO(), name)
 		if err != nil {
-			respondWithError(w, http.StatusBadRequest, err.Error())
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if len(planets) == 0 {
+			respondWithError(w, http.StatusNotFound, dao.NOT_FOUND_ERROR_MESSAGE)
 			return
 		}
 		respondWithJson(w, http.StatusOK, planets)
@@ -95,14 +101,20 @@ func (h *PlanetHandler) Delete() http.HandlerFunc {
 		var body struct{ ID string }
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+			return
 		}
 		// Declare a primitive ObjectID from a hexadecimal string
 		idPrimitive, err := primitive.ObjectIDFromHex(body.ID)
 		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
+			respondWithError(w, http.StatusBadRequest, "the Id format must be in hexadecimal")
+			return
 		}
 		filter := bson.M{"_id": idPrimitive}
 		if err := h.db.Delete(context.TODO(), filter); err != nil {
+			if err != nil && err.Error() == dao.NOT_FOUND_ERROR_MESSAGE {
+				respondWithError(w, http.StatusNotFound, err.Error())
+				return
+			}
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}

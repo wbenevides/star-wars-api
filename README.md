@@ -5,7 +5,7 @@
 1. Clone the application with `git clone https://github.com/wallacebenevides/star-wars-api.git`
 
 
-2. To run the application with Makefile, please use the following command -
+2. To run the application with Makefile, please use the following command:
 
     ```
         make
@@ -60,5 +60,11 @@
     "id": "..."
 }
 ```
+
+## Test Driven Development Description
+
+To run all the unit test cases, please do the following:
+
+1. `make test`
 
 ## Hope everything works. Thank you.

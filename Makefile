@@ -9,5 +9,9 @@ up:
 	docker-compose up -d
 
 # Down and remove container
-down: docker-compose down
+stop: docker-compose down
+
+# Run all tests: 
+test:
+	go test ./dao ./resources
 

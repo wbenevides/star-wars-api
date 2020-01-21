@@ -9,10 +9,12 @@ import (
 	"github.com/wallacebenevides/star-wars-api/db"
 	"github.com/wallacebenevides/star-wars-api/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
-	COLLECTION = "planets"
+	COLLECTION              = "planets"
+	NOT_FOUND_ERROR_MESSAGE = "document not found"
 )
 
 type PlanetsDAO interface {
@@ -57,6 +59,9 @@ func (pd *planetsDAO) Create(ctx context.Context, planet *models.Planet) error {
 func (pd *planetsDAO) FindOne(ctx context.Context, filter interface{}) (*models.Planet, error) {
 	var planet models.Planet
 	if err := pd.db.Collection(COLLECTION).FindOne(ctx, filter).Decode(&planet); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.New(NOT_FOUND_ERROR_MESSAGE)
+		}
 		return nil, err
 	}
 	return &planet, nil
@@ -88,7 +93,7 @@ func (pd *planetsDAO) Delete(ctx context.Context, filter interface{}) error {
 		return err
 	}
 	if result.DeletedCount == 0 {
-		return errors.New("document not found")
+		return errors.New(NOT_FOUND_ERROR_MESSAGE)
 	}
 	log.Debug("Planet removed")
 	return nil
