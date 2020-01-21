@@ -65,6 +65,6 @@
 
 To run all the unit test cases, please do the following:
 
-1. `make test`
+`make test`
 
 ## Hope everything works. Thank you.
