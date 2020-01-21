@@ -59,6 +59,8 @@ func (h *PlanetHandler) GetByID() http.HandlerFunc {
 		log.Info("Fetching a planet by ID")
 		params := mux.Vars(r)
 
+		log.Println("params", params["id"])
+
 		idPrimitive, err := primitive.ObjectIDFromHex(params["id"])
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, err.Error())
@@ -75,14 +77,14 @@ func (h *PlanetHandler) GetByID() http.HandlerFunc {
 
 func (h *PlanetHandler) FindByName() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Info("Finding a planet by name")
+		log.Info("Finding planets by name")
 		name := r.URL.Query().Get("name")
-		planet, err := h.db.FindByName(context.TODO(), name)
+		planets, err := h.db.FindByName(context.TODO(), name)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		respondWithJson(w, http.StatusOK, planet)
+		respondWithJson(w, http.StatusOK, planets)
 	}
 }
 
@@ -94,7 +96,6 @@ func (h *PlanetHandler) Delete() http.HandlerFunc {
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		}
-
 		// Declare a primitive ObjectID from a hexadecimal string
 		idPrimitive, err := primitive.ObjectIDFromHex(body.ID)
 		if err != nil {
@@ -123,5 +124,5 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 }
 
 func createSuccessResult() map[string]string {
-	return map[string]string{"result": "sucess"}
+	return map[string]string{"result": "success"}
 }

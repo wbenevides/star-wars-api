@@ -2,15 +2,18 @@ package resources
 
 import (
 	"bytes"
-	"encoding/json"
+	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
-	"github.com/wallacebenevides/star-wars-api/dao"
+	"github.com/stretchr/testify/mock"
 	"github.com/wallacebenevides/star-wars-api/mocks"
 	"github.com/wallacebenevides/star-wars-api/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -19,19 +22,10 @@ func TestPlanetHandler_GetAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	dbHelper := &mocks.DatabaseHelper{}
-	planetDao := dao.NewPlanetsDao(dbHelper)
-	planetDao = &mocks.PlanetsDAO{}
-
+	planetDao := &mocks.PlanetsDAO{}
 	dataMock := []models.Planet{{Name: "mocked-planet"}}
-
-	planetDao.(*mocks.PlanetsDAO).
-		On("FindAll").
-		Return(dataMock, nil)
-
-	planetDao.(*mocks.PlanetsDAO).
-		On("FindAll").
+	planetDao.
+		On("FindAll", context.TODO(), bson.D{{}}).
 		Return(dataMock, nil)
 
 	rr := httptest.NewRecorder()
@@ -46,7 +40,8 @@ func TestPlanetHandler_GetAll(t *testing.T) {
 
 	// Check the response body is what we expect.
 	got := rr.Body.String()
-	expected := `[{"name":"mocked-planet"}]`
+	expected := `[{"id":"000000000000000000000000","name":"mocked-planet","climate":"","terrain":"","films":0}]`
+
 	assert.Equal(t, expected, got)
 }
 
@@ -64,11 +59,10 @@ func TestPlanetHandler_Create(t *testing.T) {
 	objectID := &mocks.ObjectIDHelper{}
 	id, _ := primitive.ObjectIDFromHex("12345")
 	objectID.On("NewObjectID").Return(id)
-	dataMock := []models.Planet{{Name: "mocked-planet"}}
 
 	planetDao.
-		On("Create").
-		Return(dataMock, nil)
+		On("Create", context.TODO(), mock.Anything).
+		Return(nil)
 
 	rr := httptest.NewRecorder()
 
@@ -77,44 +71,49 @@ func TestPlanetHandler_Create(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	// Check the status code.
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	if status := rr.Code; status != http.StatusCreated {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
 	}
 
-	expected := payload
+	expected := `{"result":"success"}`
 	got := rr.Body.String()
 
 	assert.Equal(t, expected, got)
 }
 
 func TestPlanetHandler_GetByID(t *testing.T) {
-	id := "12345"
-	objectID, _ := primitive.ObjectIDFromHex(id)
-	req, err := http.NewRequest(http.MethodGet, "/api/planets/"+id, nil)
+	id := "5e27096d0c326694932a4cc8"
+	path := fmt.Sprintf("/api/planets/%s", id)
+	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.Header.Set("Content-type", "application/json")
+
+	req, err := http.NewRequest(http.MethodGet, path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	planetDao := &mocks.PlanetsDAO{}
 	dataMock := models.Planet{ID: objectID}
-
+	filter := bson.M{"_id": objectID}
 	planetDao.
-		On("FindOne").
-		Return(dataMock, nil)
+		On("FindOne", context.TODO(), filter).
+		Return(&dataMock, nil)
 
 	rr := httptest.NewRecorder()
 
+	router := mux.NewRouter()
 	getByID := NewPlanetHandler(planetDao).GetByID()
-	handler := http.HandlerFunc(getByID)
-	handler.ServeHTTP(rr, req)
+	router.HandleFunc("/api/planets/{id}", getByID)
+	router.ServeHTTP(rr, req)
 
 	// Check the status code.
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	expected, _ := json.Marshal(dataMock)
+	expected := `{"id":"5e27096d0c326694932a4cc8","name":"","climate":"","terrain":"","films":0}`
 	got := rr.Body.String()
 
 	assert.Equal(t, expected, got)
@@ -129,10 +128,10 @@ func TestPlanetHandler_FindByName(t *testing.T) {
 	req.Header.Set("Content-type", "application/json")
 
 	planetDao := &mocks.PlanetsDAO{}
-	dataMock := models.Planet{Name: "mocked-planet"}
+	dataMock := []models.Planet{{Name: "mocked-planet"}}
 
 	planetDao.
-		On("FindByName").
+		On("FindByName", context.TODO(), name).
 		Return(dataMock, nil)
 
 	rr := httptest.NewRecorder()
@@ -146,14 +145,15 @@ func TestPlanetHandler_FindByName(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	expected, _ := json.Marshal(dataMock)
+	expected := `[{"id":"000000000000000000000000","name":"mocked-planet","climate":"","terrain":"","films":0}]`
+
 	got := rr.Body.String()
 
 	assert.Equal(t, expected, got)
 }
 
 func TestPlanetHandler_Delete(t *testing.T) {
-	payload := `{"name":"mocked-planet"}`
+	payload := `{"id":"5e270a857247f2102f213565"}`
 	jsonStr := []byte(payload)
 
 	req, err := http.NewRequest(http.MethodDelete, "/api/planets", bytes.NewBuffer(jsonStr))
@@ -164,8 +164,11 @@ func TestPlanetHandler_Delete(t *testing.T) {
 
 	planetDao := &mocks.PlanetsDAO{}
 
+	idPrimitive, _ := primitive.ObjectIDFromHex("5e270a857247f2102f213565")
+	filter := bson.M{"_id": idPrimitive}
+
 	planetDao.
-		On("Delete").
+		On("Delete", context.TODO(), filter).
 		Return(nil)
 
 	rr := httptest.NewRecorder()
@@ -179,7 +182,7 @@ func TestPlanetHandler_Delete(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	expected := payload
+	expected := `{"result":"success"}`
 	got := rr.Body.String()
 
 	assert.Equal(t, expected, got)
