@@ -3,12 +3,12 @@ package dao
 import (
 	"context"
 	"errors"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/db"
 	"github.com/wallacebenevides/star-wars-api/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -39,7 +39,7 @@ func (pd *planetsDAO) FindAll(ctx context.Context, filter interface{}) ([]models
 	if err != nil {
 		return nil, err
 	}
-	//defer cursor.Close(ctx)
+	defer cursor.Close(ctx)
 	if err := cursor.All(ctx, &planets); err != nil {
 		return nil, err
 	}
@@ -68,23 +68,8 @@ func (pd *planetsDAO) FindOne(ctx context.Context, filter interface{}) (*models.
 }
 
 func (pd *planetsDAO) FindByName(ctx context.Context, name string) ([]models.Planet, error) {
-	var planets []models.Planet
-	cursor, err := pd.db.Collection(COLLECTION).Find(ctx, bson.D{{}})
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-	for cursor.Next(ctx) {
-		var planet models.Planet
-		if err := cursor.Decode(&planet); err != nil {
-			return nil, err
-		}
-		hasName := strings.Contains(strings.ToUpper(planet.Name), strings.ToUpper(name))
-		if hasName {
-			planets = append(planets, planet)
-		}
-	}
-	return planets, err
+	filter := bson.D{{"name", primitive.Regex{Pattern: name, Options: "i"}}}
+	return pd.FindAll(ctx, filter)
 }
 
 func (pd *planetsDAO) Delete(ctx context.Context, filter interface{}) error {

@@ -10,38 +10,94 @@ import (
 	"github.com/wallacebenevides/star-wars-api/mocks"
 	"github.com/wallacebenevides/star-wars-api/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func Test_planetsDAO_FindAll(t *testing.T) {
 
-	planetDao := &mocks.PlanetsDAO{}
+	dbHelper := &mocks.DatabaseHelper{}
+	collectionHelper := &mocks.CollectionHelper{}
+	cursor := &mocks.CursorHelper{}
 
-	planetDao.
-		On("FindAll", context.Background(), bson.M{"error": false}).
-		Once().
-		Return([]models.Planet{
-			{Name: "mocked-planet"},
-		}, nil)
+	id, _ := primitive.ObjectIDFromHex("12345")
 
-	planets, err := planetDao.FindAll(context.Background(), bson.M{"error": false})
 	expected := []models.Planet{
-		{Name: "mocked-planet"},
+		{ID: id, Name: "mocked-planet", Climate: ""},
 	}
+
+	dbHelper.
+		On("Collection", "planets").
+		Once().
+		Return(collectionHelper)
+
+	collectionHelper.
+		On("Find", context.Background(), mock.Anything).
+		Once().
+		Return(cursor, nil)
+
+	cursor.On("Close", context.Background()).Return(nil)
+
+	cursor.On("All", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			arg := args.Get(1).(*[]models.Planet)
+			*arg = expected
+		}).
+		Return(nil)
+
+	dao := NewPlanetsDao(dbHelper)
+	planets, err := dao.FindAll(context.Background(), bson.M{"error": false})
+
 	assert.Equal(t, expected, planets)
 	assert.NoError(t, err)
 }
 
-func Test_planetsDAO_FindAll_with_error(t *testing.T) {
+func Test_planetsDAO_FindAll_with_error_on_find(t *testing.T) {
 
-	planetDao := &mocks.PlanetsDAO{}
+	dbHelper := &mocks.DatabaseHelper{}
+	collectionHelper := &mocks.CollectionHelper{}
 
-	planetDao.
-		On("FindAll", context.Background(), bson.M{"error": true}).
+	dbHelper.
+		On("Collection", "planets").
+		Once().
+		Return(collectionHelper)
+
+	collectionHelper.
+		On("Find", context.Background(), bson.M{"mocked-error": true}).
 		Once().
 		Return(nil, errors.New("mocked-error"))
 
-	planets, err := planetDao.FindAll(context.Background(), bson.M{"error": true})
+	dao := NewPlanetsDao(dbHelper)
+
+	planets, err := dao.FindAll(context.Background(), bson.M{"mocked-error": true})
+	assert.Empty(t, planets)
+	assert.EqualError(t, err, "mocked-error")
+}
+
+func Test_planetsDAO_FindAll_with_error_on_all(t *testing.T) {
+
+	dbHelper := &mocks.DatabaseHelper{}
+	collectionHelper := &mocks.CollectionHelper{}
+	cursor := &mocks.CursorHelper{}
+
+	dbHelper.
+		On("Collection", "planets").
+		Once().
+		Return(collectionHelper)
+
+	collectionHelper.
+		On("Find", context.Background(), bson.M{"mocked-error": true}).
+		Once().
+		Return(cursor, nil)
+
+	cursor.On("All", mock.Anything, mock.Anything).
+		Once().
+		Return(errors.New("mocked-error"))
+	cursor.On("Close", context.Background()).Return(nil)
+
+	dao := NewPlanetsDao(dbHelper)
+
+	planets, err := dao.FindAll(context.Background(), bson.M{"mocked-error": true})
 	assert.Empty(t, planets)
 	assert.EqualError(t, err, "mocked-error")
 }
@@ -67,6 +123,7 @@ func Test_planetsDAO_FindOne(t *testing.T) {
 
 	dbHelper.
 		On("Collection", "planets").
+		Once().
 		Return(collectionHelper)
 
 	planetDao := NewPlanetsDao(dbHelper)
@@ -211,34 +268,38 @@ func Test_planetsDAO_Delete_with_db_error(t *testing.T) {
 }
 
 func Test_planetsDAO_FindByName(t *testing.T) {
+	dbHelper := &mocks.DatabaseHelper{}
+	collectionHelper := &mocks.CollectionHelper{}
+	cursor := &mocks.CursorHelper{}
 
-	planetDao := &mocks.PlanetsDAO{}
+	id, _ := primitive.ObjectIDFromHex("12345")
 
-	planetDao.
-		On("FindByName", context.Background(), "mocked-planet-correct").
-		Once().
-		Return([]models.Planet{
-			{Name: "mocked-planet"},
-		}, nil)
-
-	planets, err := planetDao.FindByName(context.Background(), "mocked-planet-correct")
 	expected := []models.Planet{
-		{Name: "mocked-planet"},
+		{ID: id, Name: "mocked-planet", Climate: ""},
 	}
+
+	dbHelper.
+		On("Collection", "planets").
+		Once().
+		Return(collectionHelper)
+
+	collectionHelper.
+		On("Find", context.Background(), mock.Anything).
+		Once().
+		Return(cursor, nil)
+
+	cursor.On("Close", context.Background()).Return(nil)
+
+	cursor.On("All", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			arg := args.Get(1).(*[]models.Planet)
+			*arg = expected
+		}).
+		Return(nil)
+
+	dao := NewPlanetsDao(dbHelper)
+	planets, err := dao.FindByName(context.Background(), "mocked-planet")
+
 	assert.Equal(t, expected, planets)
 	assert.NoError(t, err)
-}
-
-func Test_planetsDAO_FindByName_with_error(t *testing.T) {
-
-	planetDao := &mocks.PlanetsDAO{}
-
-	planetDao.
-		On("FindByName", context.Background(), "mocked-planet-error").
-		Once().
-		Return(nil, errors.New("mocked-error"))
-
-	planets, err := planetDao.FindByName(context.Background(), "mocked-planet-error")
-	assert.Empty(t, planets)
-	assert.EqualError(t, err, "mocked-error")
 }

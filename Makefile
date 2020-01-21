@@ -9,7 +9,8 @@ up:
 	docker-compose up -d
 
 # Down and remove container
-stop: docker-compose down
+stop: 
+	docker-compose down
 
 # Run all tests: 
 test:

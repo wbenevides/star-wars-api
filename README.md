@@ -13,6 +13,12 @@
 
 > Note: By default the port number its being run on is **8080**.
 
+3. To stop the application, please use the following command:
+
+    ```
+        make stop
+    ```
+
 ## Endpoints Description
 
 ### Get All Planets
@@ -63,7 +69,7 @@
 
 ## Test Driven Development Description
 
-To run all the unit test cases, please do the following:
+To run all the unit test cases, please use the following command:
 
 `make test`
 
