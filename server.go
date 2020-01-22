@@ -7,9 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/config"
-    "github.com/wallacebenevides/star-wars-api/db"
-    "github.com/wallacebenevides/star-wars-api/dao"
-	"github.com/wallacebenevides/star-wars-api/resources"
+	"github.com/wallacebenevides/star-wars-api/db"
+	"github.com/wallacebenevides/star-wars-api/routes"
 )
 
 func main() {
@@ -18,34 +17,36 @@ func main() {
 		FullTimestamp: true,
 	})
 
-	// initialize db config
 	config := config.Config{}
 	config.Read()
+	database := initializeDB(config)
+
+	r := mux.NewRouter()
+	api := newRouterAPI(r)
+
+	api.Use(loggingMiddleware)
+	routes.Routes(api, database)
+
+	log.Info("star wars planets api is listening on port ", config.Server.Port)
+	log.Fatal(http.ListenAndServe(":"+config.Server.Port, r))
+}
+
+func newRouterAPI(r *mux.Router) *mux.Router {
+	api := r.PathPrefix("/api").Subrouter()
+	api.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "api v1")
+	})
+	return api
+}
+
+func initializeDB(config config.Config) db.DatabaseHelper {
+	// initialize db config
 	client, err := db.NewClient(&config.Database)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	log.Info("Connected to MongoDB!")
-
-    database := db.NewDatabase(&config.Database, client)
-    dao := dao.NewPlanetsDao(database)
-	planetHandler := resources.NewPlanetHandler(dao)
-
-	r := mux.NewRouter()
-	log.Info("star wars planets api is listening on port ", config.Server.Port)
-	api := r.PathPrefix("/api").Subrouter()
-	api.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "api v1")
-	})
-
-	api.Use(loggingMiddleware)
-	api.HandleFunc("/planets", planetHandler.GetAll()).Methods(http.MethodGet)
-	api.HandleFunc("/planets", planetHandler.Create()).Methods(http.MethodPost)
-	api.HandleFunc("/planets", planetHandler.Delete()).Methods(http.MethodDelete)
-	api.HandleFunc("/planets/findByName", planetHandler.FindByName()).Methods(http.MethodGet)
-	api.HandleFunc("/planets/{id}", planetHandler.GetByID()).Methods(http.MethodGet)
-
-	log.Fatal(http.ListenAndServe(":"+config.Server.Port, r))
+	return db.NewDatabase(&config.Database, client)
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
