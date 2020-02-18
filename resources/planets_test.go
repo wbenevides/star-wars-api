@@ -15,7 +15,6 @@ import (
 	"github.com/wallacebenevides/star-wars-api/dao"
 	"github.com/wallacebenevides/star-wars-api/mocks"
 	"github.com/wallacebenevides/star-wars-api/models"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -27,7 +26,7 @@ func TestPlanetHandler_GetAll(t *testing.T) {
 	planetDao := &mocks.PlanetsDAO{}
 	dataMock := []models.Planet{{Name: "mocked-planet"}}
 	planetDao.
-		On("FindAll", context.TODO(), bson.D{{}}).
+		On("FindAll", context.TODO()).
 		Once().
 		Return(dataMock, nil)
 
@@ -55,7 +54,7 @@ func TestPlanetHandler_GetAll_with_error(t *testing.T) {
 	}
 	planetDao := &mocks.PlanetsDAO{}
 	planetDao.
-		On("FindAll", context.TODO(), bson.D{{}}).
+		On("FindAll", context.TODO()).
 		Once().
 		Return(nil, errors.New("mocked-error"))
 
@@ -187,7 +186,6 @@ func TestPlanetHandler_GetByID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	req, err := http.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -195,9 +193,8 @@ func TestPlanetHandler_GetByID(t *testing.T) {
 
 	planetDao := &mocks.PlanetsDAO{}
 	dataMock := models.Planet{ID: objectID}
-	filter := bson.M{"_id": objectID}
 	planetDao.
-		On("FindOne", context.TODO(), filter).
+		On("FindByID", context.TODO(), id).
 		Once().
 		Return(&dataMock, nil)
 
@@ -222,10 +219,6 @@ func TestPlanetHandler_GetByID(t *testing.T) {
 func TestPlanetHandler_GetByID_with_error(t *testing.T) {
 	id := "5e27096d0c326694932a4cc8"
 	path := fmt.Sprintf("/api/planets/%s", id)
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	req, err := http.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
@@ -233,9 +226,8 @@ func TestPlanetHandler_GetByID_with_error(t *testing.T) {
 	}
 
 	planetDao := &mocks.PlanetsDAO{}
-	filter := bson.M{"_id": objectID}
 	planetDao.
-		On("FindOne", context.TODO(), filter).
+		On("FindByID", context.TODO(), id).
 		Once().
 		Return(nil, errors.New("mocked-error"))
 
@@ -267,6 +259,10 @@ func TestPlanetHandler_GetByID_with_bad_request_error(t *testing.T) {
 	}
 
 	planetDao := &mocks.PlanetsDAO{}
+	planetDao.
+		On("FindByID", context.TODO(), id).
+		Once().
+		Return(nil, errors.New(dao.INVALID_ID_ERROR_MESSAGE))
 
 	rr := httptest.NewRecorder()
 
@@ -289,10 +285,6 @@ func TestPlanetHandler_GetByID_with_bad_request_error(t *testing.T) {
 func TestPlanetHandler_GetByID_with_not_found(t *testing.T) {
 	id := "5e27096d0c326694932a4cc8"
 	path := fmt.Sprintf("/api/planets/%s", id)
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	req, err := http.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
@@ -300,9 +292,8 @@ func TestPlanetHandler_GetByID_with_not_found(t *testing.T) {
 	}
 
 	planetDao := &mocks.PlanetsDAO{}
-	filter := bson.M{"_id": objectID}
 	planetDao.
-		On("FindOne", context.TODO(), filter).
+		On("FindByID", context.TODO(), id).
 		Return(nil, errors.New(dao.NOT_FOUND_ERROR_MESSAGE))
 
 	rr := httptest.NewRecorder()
@@ -425,7 +416,8 @@ func TestPlanetHandler_FindByName_with_not_found(t *testing.T) {
 }
 
 func TestPlanetHandler_Delete(t *testing.T) {
-	payload := `{"id":"5e270a857247f2102f213565"}`
+	id := "5e270a857247f2102f213565"
+	payload := fmt.Sprintf(`{"id": "%s"}`, id)
 	jsonStr := []byte(payload)
 
 	req, err := http.NewRequest(http.MethodDelete, "/api/planets", bytes.NewBuffer(jsonStr))
@@ -436,11 +428,9 @@ func TestPlanetHandler_Delete(t *testing.T) {
 
 	planetDao := &mocks.PlanetsDAO{}
 
-	idPrimitive, _ := primitive.ObjectIDFromHex("5e270a857247f2102f213565")
-	filter := bson.M{"_id": idPrimitive}
-
 	planetDao.
-		On("Delete", context.TODO(), filter).
+		On("Delete", context.TODO(), id).
+		Once().
 		Return(nil)
 
 	rr := httptest.NewRecorder()
@@ -501,6 +491,9 @@ func TestPlanetHandler_Delete_with_bad_request_hexadecimal_id_error(t *testing.T
 	req.Header.Set("Content-type", "application/json")
 
 	planetDao := &mocks.PlanetsDAO{}
+	planetDao.On("Delete", mock.Anything, mock.Anything).
+		Once().
+		Return(errors.New(dao.INVALID_ID_ERROR_MESSAGE))
 
 	rr := httptest.NewRecorder()
 
@@ -513,7 +506,7 @@ func TestPlanetHandler_Delete_with_bad_request_hexadecimal_id_error(t *testing.T
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
 	}
 
-	expected := `{"error":"the Id format must be in hexadecimal"}`
+	expected := fmt.Sprintf(`{"error":"%s"}`, dao.INVALID_ID_ERROR_MESSAGE)
 	got := rr.Body.String()
 
 	assert.Equal(t, expected, got)
@@ -531,13 +524,10 @@ func TestPlanetHandler_Delete_with_not_found(t *testing.T) {
 
 	planetDao := &mocks.PlanetsDAO{}
 
-	idPrimitive, _ := primitive.ObjectIDFromHex("5e270a857247f2102f213565")
-	filter := bson.M{"_id": idPrimitive}
-
 	planetDao.
-		On("Delete", context.TODO(), filter).
+		On("Delete", mock.Anything, mock.Anything).
 		Once().
-		Return(errors.New("mocked-error"))
+		Return(errors.New(dao.NOT_FOUND_ERROR_MESSAGE))
 
 	rr := httptest.NewRecorder()
 
@@ -546,11 +536,11 @@ func TestPlanetHandler_Delete_with_not_found(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	// Check the status code.
-	if status := rr.Code; status != http.StatusInternalServerError {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNotFound)
 	}
 
-	expected := `{"error":"mocked-error"}`
+	expected := fmt.Sprintf(`{"error":"%s"}`, dao.NOT_FOUND_ERROR_MESSAGE)
 	got := rr.Body.String()
 
 	assert.Equal(t, expected, got)

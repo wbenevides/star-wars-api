@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/wallacebenevides/star-wars-api/mocks"
 	"github.com/wallacebenevides/star-wars-api/models"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -32,7 +31,7 @@ func Test_planetsDAO_FindAll(t *testing.T) {
 		Return(collectionHelper)
 
 	collectionHelper.
-		On("Find", context.Background(), mock.Anything).
+		On("Find", context.Background(), primitive.D{{}}).
 		Once().
 		Return(cursor, nil)
 
@@ -46,7 +45,7 @@ func Test_planetsDAO_FindAll(t *testing.T) {
 		Return(nil)
 
 	dao := NewPlanetsDao(dbHelper)
-	planets, err := dao.FindAll(context.Background(), bson.M{"error": false})
+	planets, err := dao.FindAll(context.Background())
 
 	assert.Equal(t, expected, planets)
 	assert.NoError(t, err)
@@ -63,13 +62,13 @@ func Test_planetsDAO_FindAll_with_error_on_find(t *testing.T) {
 		Return(collectionHelper)
 
 	collectionHelper.
-		On("Find", context.Background(), bson.M{"mocked-error": true}).
+		On("Find", context.Background(), mock.Anything).
 		Once().
 		Return(nil, errors.New("mocked-error"))
 
 	dao := NewPlanetsDao(dbHelper)
 
-	planets, err := dao.FindAll(context.Background(), bson.M{"mocked-error": true})
+	planets, err := dao.FindAll(context.Background())
 	assert.Empty(t, planets)
 	assert.EqualError(t, err, "mocked-error")
 }
@@ -86,7 +85,7 @@ func Test_planetsDAO_FindAll_with_error_on_all(t *testing.T) {
 		Return(collectionHelper)
 
 	collectionHelper.
-		On("Find", context.Background(), bson.M{"mocked-error": true}).
+		On("Find", context.Background(), primitive.D{{}}).
 		Once().
 		Return(cursor, nil)
 
@@ -97,12 +96,12 @@ func Test_planetsDAO_FindAll_with_error_on_all(t *testing.T) {
 
 	dao := NewPlanetsDao(dbHelper)
 
-	planets, err := dao.FindAll(context.Background(), bson.M{"mocked-error": true})
+	planets, err := dao.FindAll(context.Background())
 	assert.Empty(t, planets)
 	assert.EqualError(t, err, "mocked-error")
 }
 
-func Test_planetsDAO_FindOne(t *testing.T) {
+func Test_planetsDAO_FindByID(t *testing.T) {
 
 	dbHelper := &mocks.DatabaseHelper{}
 	collectionHelper := &mocks.CollectionHelper{}
@@ -117,7 +116,7 @@ func Test_planetsDAO_FindOne(t *testing.T) {
 	})
 
 	collectionHelper.
-		On("FindOne", context.Background(), bson.M{"error": false}).
+		On("FindOne", context.Background(), mock.Anything).
 		Once().
 		Return(srHelperCorrect)
 
@@ -128,12 +127,13 @@ func Test_planetsDAO_FindOne(t *testing.T) {
 
 	planetDao := NewPlanetsDao(dbHelper)
 
-	planet, err := planetDao.FindOne(context.Background(), bson.M{"error": false})
+	id := "5e27096d0c326694932a4cc8"
+	planet, err := planetDao.FindByID(context.Background(), id)
 	assert.Equal(t, &models.Planet{Name: "mocked-planet"}, planet)
 	assert.NoError(t, err)
 }
 
-func Test_planetsDAO_FindOne_with_error(t *testing.T) {
+func Test_planetsDAO_FindById_with_error(t *testing.T) {
 
 	dbHelper := &mocks.DatabaseHelper{}
 	collectionHelper := &mocks.CollectionHelper{}
@@ -145,7 +145,7 @@ func Test_planetsDAO_FindOne_with_error(t *testing.T) {
 		Return(errors.New("mocked-error"))
 
 	collectionHelper.
-		On("FindOne", context.Background(), bson.M{"error": true}).
+		On("FindOne", context.Background(), mock.Anything).
 		Once().
 		Return(srHelperErr)
 
@@ -156,9 +156,22 @@ func Test_planetsDAO_FindOne_with_error(t *testing.T) {
 
 	planetDao := NewPlanetsDao(dbHelper)
 
-	planet, err := planetDao.FindOne(context.Background(), bson.M{"error": true})
+	id := "5e27096d0c326694932a4cc8"
+	planet, err := planetDao.FindByID(context.Background(), id)
 	assert.Empty(t, planet)
 	assert.EqualError(t, err, "mocked-error")
+}
+
+func Test_planetsDAO_FindById_with_invalid_id_error(t *testing.T) {
+
+	dbHelper := &mocks.DatabaseHelper{}
+
+	planetDao := NewPlanetsDao(dbHelper)
+
+	id := "invalid id"
+	planet, err := planetDao.FindByID(context.Background(), id)
+	assert.Empty(t, planet)
+	assert.EqualError(t, err, INVALID_ID_ERROR_MESSAGE)
 }
 
 func Test_planetsDAO_Create(t *testing.T) {
@@ -210,7 +223,7 @@ func Test_planetsDAO_Delete(t *testing.T) {
 	deleteResultCorrect := mongo.DeleteResult{DeletedCount: 1}
 
 	collectionHelper.
-		On("DeleteOne", context.Background(), bson.M{"error": false}).
+		On("DeleteOne", context.Background(), mock.Anything).
 		Once().
 		Return(&deleteResultCorrect, nil)
 
@@ -221,7 +234,9 @@ func Test_planetsDAO_Delete(t *testing.T) {
 
 	planetDao := NewPlanetsDao(dbHelper)
 
-	err := planetDao.Delete(context.Background(), bson.M{"error": false})
+	// VALID ID
+	id := "5e27096d0c326694932a4cc8"
+	err := planetDao.Delete(context.Background(), id)
 	assert.NoError(t, err, "document not found")
 }
 
@@ -231,7 +246,7 @@ func Test_planetsDAO_Delete_with_notFound_error(t *testing.T) {
 	collectionHelper := &mocks.CollectionHelper{}
 
 	collectionHelper.
-		On("DeleteOne", context.Background(), bson.M{"notFound-error": true}).
+		On("DeleteOne", context.Background(), mock.Anything).
 		Once().
 		Return(nil, errors.New("document not found"))
 
@@ -242,8 +257,20 @@ func Test_planetsDAO_Delete_with_notFound_error(t *testing.T) {
 
 	planetDao := NewPlanetsDao(dbHelper)
 
-	err := planetDao.Delete(context.Background(), bson.M{"notFound-error": true})
+	// VALID ID
+	id := "5e27096d0c326694932a4cc8"
+	err := planetDao.Delete(context.Background(), id)
 	assert.EqualError(t, err, "document not found")
+}
+
+func Test_planetsDAO_Delete_with_invalid_id_error(t *testing.T) {
+
+	dbHelper := &mocks.DatabaseHelper{}
+
+	planetDao := NewPlanetsDao(dbHelper)
+
+	err := planetDao.Delete(context.Background(), "INVALID ID")
+	assert.EqualError(t, err, INVALID_ID_ERROR_MESSAGE)
 }
 
 func Test_planetsDAO_Delete_with_db_error(t *testing.T) {
@@ -252,7 +279,7 @@ func Test_planetsDAO_Delete_with_db_error(t *testing.T) {
 	collectionHelper := &mocks.CollectionHelper{}
 
 	collectionHelper.
-		On("DeleteOne", context.Background(), bson.M{"db-error": true}).
+		On("DeleteOne", context.Background(), mock.Anything).
 		Once().
 		Return(nil, errors.New("mocked-db-error"))
 
@@ -263,7 +290,9 @@ func Test_planetsDAO_Delete_with_db_error(t *testing.T) {
 
 	planetDao := NewPlanetsDao(dbHelper)
 
-	err := planetDao.Delete(context.Background(), bson.M{"db-error": true})
+	// VALID ID
+	id := "5e27096d0c326694932a4cc8"
+	err := planetDao.Delete(context.Background(), id)
 	assert.EqualError(t, err, "mocked-db-error")
 }
 
