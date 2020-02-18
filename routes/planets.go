@@ -12,9 +12,10 @@ import (
 func planetsRoutes(r *mux.Router, db db.DatabaseHelper) {
 	dao := dao.NewPlanetsDao(db)
 	handler := resources.NewPlanetHandler(dao)
-	r.HandleFunc("/planets", handler.GetAll()).Methods(http.MethodGet)
-	r.HandleFunc("/planets", handler.Create()).Methods(http.MethodPost)
-	r.HandleFunc("/planets", handler.Delete()).Methods(http.MethodDelete)
-	r.HandleFunc("/planets/findByName", handler.FindByName()).Methods(http.MethodGet)
-	r.HandleFunc("/planets/{id}", handler.GetByID()).Methods(http.MethodGet)
+	routes := handler.Routes()
+	r.HandleFunc(routes.PLANETS_PATH, handler.GetAll()).Methods(http.MethodGet)
+	r.HandleFunc(routes.PLANETS_PATH, handler.Create()).Methods(http.MethodPost)
+	r.HandleFunc(routes.PLANETS_PATH, handler.Delete()).Methods(http.MethodDelete)
+	r.HandleFunc(routes.PLANETS_FIND_BY_NAME, handler.FindByName()).Methods(http.MethodGet)
+	r.HandleFunc(routes.PLANETS_ID, handler.GetByID()).Methods(http.MethodGet)
 }

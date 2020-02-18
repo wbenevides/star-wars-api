@@ -22,8 +22,22 @@ const (
 	INTERNAL_SERVER_ERROR_MESSAGE         = "Operation could not be performed"
 )
 
+type routes struct {
+	PLANETS_PATH         string
+	PLANETS_ID           string
+	PLANETS_FIND_BY_NAME string
+}
+
 func NewPlanetHandler(dao dao.PlanetsDAO) *PlanetHandler {
 	return &PlanetHandler{dao}
+}
+
+func (h PlanetHandler) Routes() routes {
+	return routes{
+		"/planets",
+		"/planets/{id}",
+		"/findByName",
+	}
 }
 
 func (h *PlanetHandler) GetAll() http.HandlerFunc {
