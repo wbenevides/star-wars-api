@@ -17,7 +17,7 @@ type DatabaseHelper interface {
 
 type CollectionHelper interface {
 	FindOne(ctx context.Context, filter interface{}) SingleResultHelper
-	InsertOne(ctx context.Context, document interface{}) (interface{}, error)
+	InsertOne(ctx context.Context, document interface{}) (*mongo.InsertOneResult, error)
 	DeleteOne(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error)
 	Find(ctx context.Context, filter interface{}) (CursorHelper, error)
 }
@@ -111,9 +111,9 @@ func (mc *mongoCollection) FindOne(ctx context.Context, filter interface{}) Sing
 	return &mongoSingleResult{sr: singleResult}
 }
 
-func (mc *mongoCollection) InsertOne(ctx context.Context, document interface{}) (interface{}, error) {
-	id, err := mc.coll.InsertOne(ctx, document)
-	return id.InsertedID, err
+func (mc *mongoCollection) InsertOne(ctx context.Context, document interface{}) (*mongo.InsertOneResult, error) {
+	result, err := mc.coll.InsertOne(ctx, document)
+	return result, err
 }
 
 func (mc *mongoCollection) DeleteOne(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error) {

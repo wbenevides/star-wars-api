@@ -23,7 +23,7 @@ const (
 
 type PlanetsDAO interface {
 	FindAll(ctx context.Context) ([]models.Planet, error)
-	Create(ctx context.Context, planets *models.Planet) error
+	Create(ctx context.Context, planets *models.Planet) (interface{}, error)
 	FindByID(cxt context.Context, id string) (*models.Planet, error)
 	FindByName(cxt context.Context, name string) ([]models.Planet, error)
 	Delete(cxt context.Context, id string) error
@@ -42,14 +42,14 @@ func (pd *planetsDAO) FindAll(ctx context.Context) ([]models.Planet, error) {
 	return pd.find(ctx, filter)
 }
 
-func (pd *planetsDAO) Create(ctx context.Context, planet *models.Planet) error {
-	_, err := pd.db.Collection(COLLECTION).InsertOne(ctx, planet)
+func (pd *planetsDAO) Create(ctx context.Context, planet *models.Planet) (interface{}, error) {
+	result, err := pd.db.Collection(COLLECTION).InsertOne(ctx, planet)
 	if err != nil {
 		log.WithField("name", planet.Name).Error("There was an error creating the planet::", err.Error())
-		return err
+		return nil, err
 	}
-	log.WithField("name", planet.Name).Debug("Planet created")
-	return nil
+	log.WithField("name", planet.Name).Debug("Planet created:", result.InsertedID)
+	return result.InsertedID, nil
 }
 
 func (pd *planetsDAO) FindByID(ctx context.Context, id string) (*models.Planet, error) {

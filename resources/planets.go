@@ -64,11 +64,15 @@ func (h *PlanetHandler) Create() http.HandlerFunc {
 		idHelper := db.ObjectID()
 		planet.ID = idHelper.NewObjectID()
 		log.Info("Creating a planet")
-		if err := h.db.Create(context.TODO(), &planet); err != nil {
+		id, err := h.db.Create(context.TODO(), &planet)
+		if err != nil {
 			errorHandler(w, err)
 			return
 		}
+		log.Debug("id", id)
 		result := createSuccessResult()
+		location := h.Routes().PLANETS_PATH + "/"
+		w.Header().Add("Location", location)
 		respondWithJson(w, http.StatusCreated, result)
 	}
 }
