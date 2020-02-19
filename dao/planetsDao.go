@@ -24,7 +24,7 @@ const (
 type PlanetsDAO interface {
 	FindAll(ctx context.Context) ([]models.Planet, error)
 	Create(ctx context.Context, planets *models.Planet) (interface{}, error)
-	FindByID(cxt context.Context, id string) (*models.Planet, error)
+	FindByID(cxt context.Context, id string) (models.Planet, error)
 	FindByName(cxt context.Context, name string) ([]models.Planet, error)
 	Delete(cxt context.Context, id string) error
 }
@@ -48,25 +48,25 @@ func (pd *planetsDAO) Create(ctx context.Context, planet *models.Planet) (interf
 		log.WithField("name", planet.Name).Error("There was an error creating the planet::", err.Error())
 		return nil, err
 	}
-	log.WithField("name", planet.Name).Debug("Planet created:", result.InsertedID)
+	log.WithField("name", planet.Name).Info("Planet created:", result.InsertedID.(primitive.ObjectID).String())
 	return result.InsertedID, nil
 }
 
-func (pd *planetsDAO) FindByID(ctx context.Context, id string) (*models.Planet, error) {
+func (pd *planetsDAO) FindByID(ctx context.Context, id string) (models.Planet, error) {
 	objectID, err := createObjectIDFromHex(id)
+	var planet models.Planet
 	if err != nil {
 		log.WithField("id", id).Error("There was an error find the planet by id")
-		return nil, err
+		return planet, err
 	}
 	filter := bson.M{"_id": objectID}
-	planets, err := pd.findOne(ctx, filter)
+	planet, err = pd.findOne(ctx, filter)
 
 	if err != nil {
 		log.WithField("id", id).Error("There was an error find the planet by id")
-		return nil, err
+		return planet, err
 	}
-
-	return planets, nil
+	return planet, nil
 }
 
 func (pd *planetsDAO) FindByName(ctx context.Context, name string) ([]models.Planet, error) {
@@ -107,24 +107,23 @@ func (pd *planetsDAO) find(ctx context.Context, filter interface{}) ([]models.Pl
 	return planets, nil
 }
 
-func (pd *planetsDAO) findOne(ctx context.Context, filter interface{}) (*models.Planet, error) {
+func (pd *planetsDAO) findOne(ctx context.Context, filter interface{}) (models.Planet, error) {
 	var planet models.Planet
 	if err := pd.db.Collection(COLLECTION).FindOne(ctx, filter).Decode(&planet); err != nil {
 		if err == mongo.ErrNoDocuments {
 			log.Error(err)
-			return nil, errors.New(NOT_FOUND_ERROR_MESSAGE)
+			return planet, errors.New(NOT_FOUND_ERROR_MESSAGE)
 		}
-		return nil, err
+		return planet, err
 	}
-	return &planet, nil
+	return planet, nil
 }
 
-func createObjectIDFromHex(id string) (*primitive.ObjectID, error) {
+func createObjectIDFromHex(id string) (primitive.ObjectID, error) {
 	idPrimitive, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		log.Error(err)
-		return nil, errors.New(INVALID_ID_ERROR_MESSAGE)
+		return idPrimitive, errors.New(INVALID_ID_ERROR_MESSAGE)
 	}
-
-	return &idPrimitive, nil
+	return idPrimitive, nil
 }

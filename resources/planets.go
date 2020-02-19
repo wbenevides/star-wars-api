@@ -11,6 +11,7 @@ import (
 	"github.com/wallacebenevides/star-wars-api/dao"
 	"github.com/wallacebenevides/star-wars-api/db"
 	"github.com/wallacebenevides/star-wars-api/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PlanetHandler struct {
@@ -69,11 +70,10 @@ func (h *PlanetHandler) Create() http.HandlerFunc {
 			errorHandler(w, err)
 			return
 		}
-		log.Debug("id", id)
-		result := createSuccessResult()
-		location := h.Routes().PLANETS_PATH + "/"
+		planet.ID = id.(primitive.ObjectID)
+		location := r.URL.String() + "/" + planet.ID.Hex()
 		w.Header().Add("Location", location)
-		respondWithJson(w, http.StatusCreated, result)
+		respondWithJson(w, http.StatusCreated, planet)
 	}
 }
 
