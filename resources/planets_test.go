@@ -70,7 +70,7 @@ func TestPlanetHandler_GetAll_with_error(t *testing.T) {
 
 	// Check the response body is what we expect.
 	got := rr.Body.String()
-	expected := `{"error":"mocked-error"}`
+	expected := `{"error":"` + INTERNAL_SERVER_ERROR_MESSAGE + `"}`
 
 	assert.Equal(t, expected, got)
 }
@@ -93,7 +93,7 @@ func TestPlanetHandler_Create(t *testing.T) {
 	planetDao.
 		On("Create", context.TODO(), mock.Anything).
 		Once().
-		Return(nil)
+		Return(nil, nil)
 
 	rr := httptest.NewRecorder()
 
@@ -130,7 +130,7 @@ func TestPlanetHandler_Create_with_error(t *testing.T) {
 	planetDao.
 		On("Create", context.TODO(), mock.Anything).
 		Once().
-		Return(errors.New("mocked-error"))
+		Return(nil, errors.New("mocked-error"))
 
 	rr := httptest.NewRecorder()
 
@@ -143,7 +143,7 @@ func TestPlanetHandler_Create_with_error(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
 	}
 
-	expected := `{"error":"mocked-error"}`
+	expected := `{"error":"` + INTERNAL_SERVER_ERROR_MESSAGE + `"}`
 	got := rr.Body.String()
 
 	assert.Equal(t, expected, got)
@@ -243,7 +243,8 @@ func TestPlanetHandler_GetByID_with_error(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
 	}
 
-	expected := `{"error":"mocked-error"}`
+	expected := `{"error":"` + INTERNAL_SERVER_ERROR_MESSAGE + `"}`
+
 	got := rr.Body.String()
 
 	assert.Equal(t, expected, got)
@@ -374,7 +375,7 @@ func TestPlanetHandler_FindByName_with_error(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
 	}
 
-	expected := `{"error":"mocked-error"}`
+	expected := `{"error":"` + INTERNAL_SERVER_ERROR_MESSAGE + `"}`
 
 	got := rr.Body.String()
 

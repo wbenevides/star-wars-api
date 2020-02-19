@@ -179,10 +179,12 @@ func Test_planetsDAO_Create(t *testing.T) {
 	dbHelper := &mocks.DatabaseHelper{}
 	collectionHelper := &mocks.CollectionHelper{}
 
+	expected := &mongo.InsertOneResult{InsertedID: "1234"}
+
 	collectionHelper.
-		On("InsertOne", context.Background(), &models.Planet{Name: "mocked-planet-correct"}).
+		On("InsertOne", context.Background(), mock.Anything).
 		Once().
-		Return(nil, nil)
+		Return(expected, nil)
 
 	dbHelper.
 		On("Collection", "planets").
@@ -191,7 +193,8 @@ func Test_planetsDAO_Create(t *testing.T) {
 
 	planetDao := NewPlanetsDao(dbHelper)
 
-	err := planetDao.Create(context.Background(), &models.Planet{Name: "mocked-planet-correct"})
+	insertedID, err := planetDao.Create(context.Background(), &models.Planet{Name: "mocked-planet-correct"})
+	assert.Equal(t, expected.InsertedID, insertedID)
 	assert.NoError(t, err)
 }
 
@@ -212,7 +215,7 @@ func Test_planetsDAO_Create_with_error(t *testing.T) {
 
 	planetDao := NewPlanetsDao(dbHelper)
 
-	err := planetDao.Create(context.Background(), &models.Planet{Name: "mocked-planet-error"})
+	_, err := planetDao.Create(context.Background(), &models.Planet{Name: "mocked-planet-error"})
 	assert.EqualError(t, err, "mocked-error")
 }
 
