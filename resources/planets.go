@@ -9,9 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/wallacebenevides/star-wars-api/dao"
-	"github.com/wallacebenevides/star-wars-api/db"
 	"github.com/wallacebenevides/star-wars-api/models"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PlanetHandler struct {
@@ -62,16 +60,14 @@ func (h *PlanetHandler) Create() http.HandlerFunc {
 			errorHandler(w, errors.New(INVALID_REQUEST_PAYLOAD_ERROR_MESSAGE))
 			return
 		}
-		idHelper := db.ObjectID()
-		planet.ID = idHelper.NewObjectID()
 		log.Info("Creating a planet")
 		id, err := h.db.Create(context.TODO(), &planet)
 		if err != nil {
 			errorHandler(w, err)
 			return
 		}
-		planet.ID = id.(primitive.ObjectID)
-		location := r.URL.String() + "/" + planet.ID.Hex()
+		planet.ID = id
+		location := r.URL.String() + "/" + id
 		w.Header().Add("Location", location)
 		respondWithJson(w, http.StatusCreated, planet)
 	}
@@ -116,7 +112,6 @@ func (h *PlanetHandler) Delete() http.HandlerFunc {
 			errorHandler(w, errors.New(INVALID_REQUEST_PAYLOAD_ERROR_MESSAGE))
 			return
 		}
-		// Declare a primitive ObjectID from a hexadecimal string
 		log.Info("Deleting a planet")
 		if err := h.db.Delete(context.TODO(), body.ID); err != nil {
 			errorHandler(w, err)

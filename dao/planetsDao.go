@@ -23,7 +23,7 @@ const (
 
 type PlanetsDAO interface {
 	FindAll(ctx context.Context) ([]models.Planet, error)
-	Create(ctx context.Context, planets *models.Planet) (interface{}, error)
+	Create(ctx context.Context, planets *models.Planet) (string, error)
 	FindByID(cxt context.Context, id string) (models.Planet, error)
 	FindByName(cxt context.Context, name string) ([]models.Planet, error)
 	Delete(cxt context.Context, id string) error
@@ -42,14 +42,22 @@ func (pd *planetsDAO) FindAll(ctx context.Context) ([]models.Planet, error) {
 	return pd.find(ctx, filter)
 }
 
-func (pd *planetsDAO) Create(ctx context.Context, planet *models.Planet) (interface{}, error) {
-	result, err := pd.db.Collection(COLLECTION).InsertOne(ctx, planet)
+func (pd *planetsDAO) Create(ctx context.Context, planet *models.Planet) (string, error) {
+	result, err := pd.db.
+		Collection(COLLECTION).
+		InsertOne(ctx, &models.PlanetDocument{
+			Name:    planet.Name,
+			Climate: planet.Climate,
+			Terrain: planet.Terrain,
+			Films:   planet.Films,
+		})
 	if err != nil {
 		log.WithField("name", planet.Name).Error("There was an error creating the planet::", err.Error())
-		return nil, err
+		return "", err
 	}
-	log.WithField("name", planet.Name).Info("Planet created:", result.InsertedID.(primitive.ObjectID).String())
-	return result.InsertedID, nil
+	stringID := result.InsertedID.(primitive.ObjectID).Hex()
+	log.WithField("name", planet.Name).Info("Planet created:", stringID)
+	return stringID, nil
 }
 
 func (pd *planetsDAO) FindByID(ctx context.Context, id string) (models.Planet, error) {
@@ -75,6 +83,7 @@ func (pd *planetsDAO) FindByName(ctx context.Context, name string) ([]models.Pla
 }
 
 func (pd *planetsDAO) Delete(ctx context.Context, id string) error {
+
 	objectID, err := createObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -119,6 +128,7 @@ func (pd *planetsDAO) findOne(ctx context.Context, filter interface{}) (models.P
 	return planet, nil
 }
 
+// Declare a primitive ObjectID from a hexadecimal string
 func createObjectIDFromHex(id string) (primitive.ObjectID, error) {
 	idPrimitive, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
