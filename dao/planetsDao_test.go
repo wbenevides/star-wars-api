@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"errors"
+	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +20,7 @@ func Test_planetsDAO_FindAll(t *testing.T) {
 	collectionHelper := &mocks.CollectionHelper{}
 	cursor := &mocks.CursorHelper{}
 
-	id, _ := primitive.ObjectIDFromHex("12345")
+	id := "5e27096d0c326694932a4cc8"
 
 	expected := []models.Planet{
 		{ID: id, Name: "mocked-planet", Climate: ""},
@@ -129,7 +130,7 @@ func Test_planetsDAO_FindByID(t *testing.T) {
 
 	id := "5e27096d0c326694932a4cc8"
 	planet, err := planetDao.FindByID(context.Background(), id)
-	assert.Equal(t, &models.Planet{Name: "mocked-planet"}, planet)
+	assert.Equal(t, models.Planet{Name: "mocked-planet"}, planet)
 	assert.NoError(t, err)
 }
 
@@ -179,12 +180,17 @@ func Test_planetsDAO_Create(t *testing.T) {
 	dbHelper := &mocks.DatabaseHelper{}
 	collectionHelper := &mocks.CollectionHelper{}
 
-	expected := &mongo.InsertOneResult{InsertedID: "1234"}
+	idExpected := "5e27096d0c326694932a4cc8"
+	objectID, err := primitive.ObjectIDFromHex(idExpected)
+	if err != nil {
+		log.Panic(err.Error())
+	}
+	insertOneResult := &mongo.InsertOneResult{InsertedID: objectID}
 
 	collectionHelper.
 		On("InsertOne", context.Background(), mock.Anything).
 		Once().
-		Return(expected, nil)
+		Return(insertOneResult, nil)
 
 	dbHelper.
 		On("Collection", "planets").
@@ -194,7 +200,7 @@ func Test_planetsDAO_Create(t *testing.T) {
 	planetDao := NewPlanetsDao(dbHelper)
 
 	insertedID, err := planetDao.Create(context.Background(), &models.Planet{Name: "mocked-planet-correct"})
-	assert.Equal(t, expected.InsertedID, insertedID)
+	assert.Equal(t, idExpected, insertedID)
 	assert.NoError(t, err)
 }
 
@@ -204,7 +210,7 @@ func Test_planetsDAO_Create_with_error(t *testing.T) {
 	collectionHelper := &mocks.CollectionHelper{}
 
 	collectionHelper.
-		On("InsertOne", context.Background(), &models.Planet{Name: "mocked-planet-error"}).
+		On("InsertOne", context.Background(), &models.PlanetDocument{Name: "mocked-planet-error"}).
 		Once().
 		Return(nil, errors.New("mocked-error"))
 
@@ -304,7 +310,7 @@ func Test_planetsDAO_FindByName(t *testing.T) {
 	collectionHelper := &mocks.CollectionHelper{}
 	cursor := &mocks.CursorHelper{}
 
-	id, _ := primitive.ObjectIDFromHex("12345")
+	id := "5e27096d0c326694932a4cc8"
 
 	expected := []models.Planet{
 		{ID: id, Name: "mocked-planet", Climate: ""},
