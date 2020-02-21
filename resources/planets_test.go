@@ -178,8 +178,7 @@ func TestPlanetHandler_GetByID(t *testing.T) {
 		Return(dataMock, nil)
 
 	// request logic
-	path := fmt.Sprintf("/api/planets/%s", id)
-	req, err := http.NewRequest(http.MethodGet, path, nil)
+	req, err := http.NewRequest(http.MethodGet, "/api/planets/"+id, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,7 +209,7 @@ func TestPlanetHandler_GetByID_with_error(t *testing.T) {
 		Return(planet, errors.New("mocked-error"))
 
 	// request logic
-	path := fmt.Sprintf("/api/planets/%s", id)
+	path := "/api/planets/" + id
 	req, err := http.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -241,7 +240,7 @@ func TestPlanetHandler_GetByID_with_bad_request_error(t *testing.T) {
 		Return(planet, errors.New(dao.INVALID_ID_ERROR_MESSAGE))
 
 	// request logic
-	path := fmt.Sprintf("/api/planets/%s", id)
+	path := "/api/planets/" + id
 	req, err := http.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -272,7 +271,7 @@ func TestPlanetHandler_GetByID_with_not_found(t *testing.T) {
 		Return(planet, errors.New(dao.NOT_FOUND_ERROR_MESSAGE))
 
 	// request logic
-	path := fmt.Sprintf("/api/planets/%s", id)
+	path := "/api/planets/" + id
 	req, err := http.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -389,19 +388,19 @@ func TestPlanetHandler_Delete(t *testing.T) {
 		On("Delete", context.TODO(), mockedID).
 		Once().
 		Return(nil)
-	payload := fmt.Sprintf(`{"id": "%s"}`, mockedID)
-	jsonStr := []byte(payload)
 
 	// request logic
-	req, err := http.NewRequest(http.MethodDelete, "/api/planets", bytes.NewBuffer(jsonStr))
+	path := "/api/planets/" + mockedID
+	req, err := http.NewRequest(http.MethodDelete, path, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-type", "application/json")
 	rr := httptest.NewRecorder()
-	delete := NewPlanetHandler(planetDao).Delete()
-	handler := http.HandlerFunc(delete)
-	handler.ServeHTTP(rr, req)
+	router := mux.NewRouter()
+	planetHandler := NewPlanetHandler(planetDao)
+	router.HandleFunc("/api"+planetHandler.Routes().PLANETS_ID, planetHandler.Delete()).Methods(http.MethodDelete)
+	router.ServeHTTP(rr, req)
 
 	// Check the status code.
 	assert.Equal(t, http.StatusOK, rr.Code, "handler returned wrong status code")
@@ -412,7 +411,7 @@ func TestPlanetHandler_Delete(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-func TestPlanetHandler_Delete_with_bad_request_error(t *testing.T) {
+/* func TestPlanetHandler_Delete_with_bad_request_error(t *testing.T) {
 	// mock declaration
 	planetDao := &mocks.PlanetsDAO{}
 	payload := `{"id":0}`
@@ -436,7 +435,7 @@ func TestPlanetHandler_Delete_with_bad_request_error(t *testing.T) {
 	expected := `{"error":"Invalid request payload"}`
 	got := rr.Body.String()
 	assert.Equal(t, expected, got)
-}
+} */
 
 func TestPlanetHandler_Delete_with_bad_request_hexadecimal_id_error(t *testing.T) {
 	// mock declaration
@@ -444,20 +443,20 @@ func TestPlanetHandler_Delete_with_bad_request_hexadecimal_id_error(t *testing.T
 	planetDao.On("Delete", mock.Anything, mock.Anything).
 		Once().
 		Return(errors.New(dao.INVALID_ID_ERROR_MESSAGE))
-	// payload not in hexadecimal
-	payload := `{"id":"5e270a857247f2102f21356z"}`
-	jsonStr := []byte(payload)
+	// payload not is hexadecimal
+	mockedID := `{"id":"5e270a857247f2102f21356z"}`
 
 	// request logic
-	req, err := http.NewRequest(http.MethodDelete, "/api/planets", bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest(http.MethodDelete, "/api/planets/"+mockedID, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-type", "application/json")
 	rr := httptest.NewRecorder()
-	delete := NewPlanetHandler(planetDao).Delete()
-	handler := http.HandlerFunc(delete)
-	handler.ServeHTTP(rr, req)
+	planetHandler := NewPlanetHandler(planetDao)
+	router := mux.NewRouter()
+	router.HandleFunc("/api"+planetHandler.Routes().PLANETS_ID, planetHandler.Delete()).Methods(http.MethodDelete)
+	router.ServeHTTP(rr, req)
 
 	// Check the status code.
 	assert.Equal(t, http.StatusBadRequest, rr.Code, "handler returned wrong status code")
@@ -475,19 +474,19 @@ func TestPlanetHandler_Delete_with_not_found(t *testing.T) {
 		On("Delete", mock.Anything, mock.Anything).
 		Once().
 		Return(errors.New(dao.NOT_FOUND_ERROR_MESSAGE))
-	payload := `{"id":"5e270a857247f2102f213565"}`
-	jsonStr := []byte(payload)
+	mockedID := `{"id":"5e270a857247f2102f213565"}`
 
 	// request logic
-	req, err := http.NewRequest(http.MethodDelete, "/api/planets", bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest(http.MethodDelete, "/api/planets/"+mockedID, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-type", "application/json")
 	rr := httptest.NewRecorder()
-	delete := NewPlanetHandler(planetDao).Delete()
-	handler := http.HandlerFunc(delete)
-	handler.ServeHTTP(rr, req)
+	planetHandler := NewPlanetHandler(planetDao)
+	router := mux.NewRouter()
+	router.HandleFunc("/api"+planetHandler.Routes().PLANETS_ID, planetHandler.Delete()).Methods(http.MethodDelete)
+	router.ServeHTTP(rr, req)
 
 	// Check the status code.
 	assert.Equal(t, http.StatusNotFound, rr.Code, "handler returned wrong status code")

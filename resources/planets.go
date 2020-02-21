@@ -33,9 +33,9 @@ func NewPlanetHandler(dao dao.PlanetsDAO) *PlanetHandler {
 
 func (h PlanetHandler) Routes() routes {
 	return routes{
-		"/planets",
-		"/planets/{id}",
-		"/findByName",
+		PLANETS_PATH:         "/planets",
+		PLANETS_ID:           "/planets/{id}",
+		PLANETS_FIND_BY_NAME: "/planets/findByName",
 	}
 }
 
@@ -105,15 +105,10 @@ func (h *PlanetHandler) FindByName() http.HandlerFunc {
 
 func (h *PlanetHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		var body struct{ ID string }
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			log.Debug(err.Error(), body)
-			errorHandler(w, errors.New(INVALID_REQUEST_PAYLOAD_ERROR_MESSAGE))
-			return
-		}
-		log.Info("Deleting a planet")
-		if err := h.db.Delete(context.TODO(), body.ID); err != nil {
+		params := mux.Vars(r)
+		log.Info("params", params)
+		log.Info("Deleting a planet", params["id"])
+		if err := h.db.Delete(context.TODO(), params["id"]); err != nil {
 			errorHandler(w, err)
 			return
 		}

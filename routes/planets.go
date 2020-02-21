@@ -15,7 +15,7 @@ func planetsRoutes(r *mux.Router, db db.DatabaseHelper) {
 	routes := handler.Routes()
 	r.HandleFunc(routes.PLANETS_PATH, handler.GetAll()).Methods(http.MethodGet)
 	r.HandleFunc(routes.PLANETS_PATH, handler.Create()).Methods(http.MethodPost)
-	r.HandleFunc(routes.PLANETS_PATH, handler.Delete()).Methods(http.MethodDelete)
 	r.HandleFunc(routes.PLANETS_FIND_BY_NAME, handler.FindByName()).Methods(http.MethodGet)
+	r.HandleFunc(routes.PLANETS_ID, handler.Delete()).Methods(http.MethodDelete)
 	r.HandleFunc(routes.PLANETS_ID, handler.GetByID()).Methods(http.MethodGet)
 }
