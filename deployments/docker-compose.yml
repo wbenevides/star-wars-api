@@ -8,11 +8,11 @@ services:
         environment:
             MONGO_INITDB_DATABASE : star_wars_db
         volumes:
-            - "./config/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro"
+            - "../scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro"
     golang:
         build:
-            dockerfile: ./docker/star-wars-api.dockerfile
-            context: .
+            dockerfile: ./build/package/Dockerfile
+            context: ../
         image: wallacebenevides/star-wars-api
         container_name: star-wars-api
         ports:

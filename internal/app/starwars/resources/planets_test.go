@@ -13,9 +13,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/wallacebenevides/star-wars-api/dao"
-	"github.com/wallacebenevides/star-wars-api/mocks"
-	"github.com/wallacebenevides/star-wars-api/models"
+	"github.com/wallacebenevides/star-wars-api/internal/app/starwars/dao"
+	"github.com/wallacebenevides/star-wars-api/internal/app/starwars/mocks"
+	"github.com/wallacebenevides/star-wars-api/internal/app/starwars/models"
 )
 
 func TestPlanetHandler_GetAll(t *testing.T) {

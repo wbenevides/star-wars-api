@@ -6,9 +6,9 @@ import (
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"github.com/wallacebenevides/star-wars-api/config"
-	"github.com/wallacebenevides/star-wars-api/db"
-	"github.com/wallacebenevides/star-wars-api/routes"
+	"github.com/wallacebenevides/star-wars-api/internal/app/starwars/routes"
+	"github.com/wallacebenevides/star-wars-api/internal/pkg/config"
+	"github.com/wallacebenevides/star-wars-api/internal/pkg/db"
 )
 
 func main() {
@@ -19,6 +19,7 @@ func main() {
 
 	config := config.Config{}
 	config.Read()
+	log.Info(config)
 	database := initializeDB(config)
 
 	r := mux.NewRouter()

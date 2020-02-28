@@ -1,18 +1,18 @@
 all: build up
 
 # Build the container
-build:
-	docker-compose build
+builder:
+	cd ./deployments && docker-compose build
 
 # Build and run the container
 up:
-	docker-compose up -d
+	cd ./deployments && docker-compose up
 
 # Down and remove container
 stop: 
-	docker-compose down
+	cd ./deployments && docker-compose down
 
 # Run all tests: 
 test:
-	go test ./dao ./resources
+	go test ./internal/app/starwars/dao ./internal/app/starwars/resources
 

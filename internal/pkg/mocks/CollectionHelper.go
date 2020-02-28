@@ -6,7 +6,7 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
-	db "github.com/wallacebenevides/star-wars-api/db"
+	db "github.com/wallacebenevides/star-wars-api/internal/pkg/db"
 
 	mongo "go.mongodb.org/mongo-driver/mongo"
 )

@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/wallacebenevides/star-wars-api/mocks"
-	"github.com/wallacebenevides/star-wars-api/models"
+	"github.com/wallacebenevides/star-wars-api/internal/app/starwars/models"
+	"github.com/wallacebenevides/star-wars-api/internal/pkg/mocks"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )

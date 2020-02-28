@@ -8,8 +8,8 @@ import (
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"github.com/wallacebenevides/star-wars-api/dao"
-	"github.com/wallacebenevides/star-wars-api/models"
+	"github.com/wallacebenevides/star-wars-api/internal/app/starwars/dao"
+	"github.com/wallacebenevides/star-wars-api/internal/app/starwars/models"
 )
 
 type PlanetHandler struct {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/wallacebenevides/star-wars-api/config"
+	"github.com/wallacebenevides/star-wars-api/internal/pkg/config"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

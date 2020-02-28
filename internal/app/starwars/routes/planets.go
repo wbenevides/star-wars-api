@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/wallacebenevides/star-wars-api/dao"
-	"github.com/wallacebenevides/star-wars-api/db"
-	"github.com/wallacebenevides/star-wars-api/resources"
+	"github.com/wallacebenevides/star-wars-api/internal/app/starwars/dao"
+	"github.com/wallacebenevides/star-wars-api/internal/app/starwars/resources"
+	"github.com/wallacebenevides/star-wars-api/internal/pkg/db"
 )
 
 func planetsRoutes(r *mux.Router, db db.DatabaseHelper) {
